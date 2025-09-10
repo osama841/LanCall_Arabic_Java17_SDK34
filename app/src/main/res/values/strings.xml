@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">لان كول</string>
+    <string name="main_title">اتصال محلي بدون إنترنت</string>
+    <string name="btn_show_qr">عرض رمز الاستجابة (QR)</string>
+    <string name="btn_scan_qr">مسح QR لإضافة جهة</string>
+    <string name="btn_help">تعليمات الاستخدام</string>
+    <string name="qr_title">رمز جهازك (IPv4)</string>
+    <string name="help_title">تعليمات</string>
+    <string name="help_text">\u2022 اشبك الجهازين على نفس الشبكة (واي-فاي واحد أو هوتسبوت بدون إنترنت)\n\u2022 على هذا الجهاز: اضغط "عرض QR" لمشاركة العنوان\n\u2022 على الجهاز الآخر: اضغط "مسح QR" لإضافتك\n\u2022 يفضّل IPv4 (مثل 192.168.x.x). إذا ظهر عنوان fe80:: فهذا IPv6 وقد يفشل الاتصال على بعض الشبكات.\n\u2022 عطّل تحسين البطارية ومنح الأذونات (كاميرا/مايك/إشعارات/الظهور فوق التطبيقات) لضمان الاستقرار.</string>
+    <string name="qr_ipv4_missing">تعذر الحصول على عنوان IPv4. تأكد أنك متصل بشبكة واي-فاي.</string>
+    
+    <!-- Call Activity Strings -->
+    <string name="call_incoming">مكالمة واردة</string>
+    <string name="call_connecting">جاري الاتصال...</string>
+    <string name="call_connected">متصل</string>
+    <string name="call_ended">انتهت المكالمة</string>
+    <string name="btn_answer">رد</string>
+    <string name="btn_decline">رفض</string>
+    <string name="btn_end_call">إنهاء المكالمة</string>
+    <string name="btn_mute">كتم الصوت</string>
+    <string name="btn_unmute">إلغاء كتم الصوت</string>
+    <string name="btn_speaker">مكبر الصوت</string>
+    <string name="call_duration">مدة المكالمة: %s</string>
+    
+    <!-- Error Messages -->
+    <string name="error_connection_failed">فشل الاتصال</string>
+    <string name="error_invalid_qr">رمز QR غير صحيح</string>
+    <string name="error_network_unavailable">الشبكة غير متاحة</string>
+    <string name="error_audio_permission">يتطلب إذن الميكروفون</string>
+    
+    <!-- Notifications -->
+    <string name="notification_call_service">خدمة المكالمات نشطة</string>
+    <string name="notification_incoming_call">مكالمة واردة من %s</string>
+</resources>

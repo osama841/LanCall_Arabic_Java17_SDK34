@@ -1,0 +1,27 @@
+// Root build.gradle intentionally minimal; managed via classic 'buildscript' for AGP 8.4.2 compatibility.
+
+buildscript {
+    // استخدم نسخة كوتلن مناسبة لـ AGP 8.4.x
+    ext.kotlin_version = '1.9.22'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // مهم: استخدم Android Gradle Plugin متوافق مع Gradle 8.9
+        classpath 'com.android.tools.build:gradle:8.4.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+// no top-level tasks; everything is under :app

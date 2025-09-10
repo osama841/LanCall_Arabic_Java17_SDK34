@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="#1E1E1E">
+
+    <!-- Call Status -->
+    <TextView
+        android:id="@+id/tvCallStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/call_connected"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#4CAF50"
+        android:layout_marginTop="40dp" />
+
+    <!-- Remote IP Address -->
+    <TextView
+        android:id="@+id/tvRemoteAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="16sp"
+        android:textColor="#CCCCCC"
+        android:layout_marginTop="16dp" />
+
+    <!-- Call Duration -->
+    <TextView
+        android:id="@+id/tvCallDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textSize="48sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:layout_marginTop="60dp"
+        android:layout_marginBottom="60dp" />
+
+    <!-- Audio Quality -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🔊 جودة الصوت: جيدة"
+        android:textSize="14sp"
+        android:textColor="#4CAF50"
+        android:layout_marginBottom="40dp" />
+
+    <!-- Control Buttons Row -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="40dp">
+
+        <!-- Mute Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMute"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:text="🎤"
+            android:textSize="28sp"
+            android:backgroundTint="#444444"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="24dp" />
+
+        <!-- Speaker Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSpeaker"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:text="📢"
+            android:textSize="28sp"
+            android:backgroundTint="#444444"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="24dp" />
+
+    </LinearLayout>
+
+    <!-- End Call Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEndCall"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:text="📞"
+        android:textSize="48sp"
+        android:backgroundTint="#FF4444"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="20dp" />
+
+    <!-- Network Status -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="40dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📶 WiFi"
+            android:textSize="16sp"
+            android:textColor="#4CAF50"
+            android:layout_marginEnd="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔒 محمي"
+            android:textSize="16sp"
+            android:textColor="#4CAF50"
+            android:layout_marginStart="16dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
