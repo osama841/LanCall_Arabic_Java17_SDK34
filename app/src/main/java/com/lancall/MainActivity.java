@@ -39,14 +39,16 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this); // تفعيل عرض ملء الشاشة - يستغل كامل مساحة الشاشة
         setContentView(R.layout.activity_main); // ربط النشاط بملف التخطيط XML
 
-        // ربط الأزرار بمتغيرات للتحكم بها برمجياً - Link buttons to variables for programmatic control
+        // ربط الأزرار بمتغيرات للتحكم بها برمجياً - Link buttons to variables for
+        // programmatic control
         MaterialButton btnShowQr = findViewById(R.id.btnShowQr); // زر عرض رمز QR للجهاز الحالي
         MaterialButton btnScanQr = findViewById(R.id.btnScanQr); // زر مسح رمز QR لجهاز آخر
+        MaterialButton btnMessaging = findViewById(R.id.btnMessaging); // زر المراسلة المباشرة
         MaterialButton btnHelp = findViewById(R.id.btnHelp); // زر المساعدة والتعليمات
 
         // ربط زر المساعدة بوظيفته - Link help button to its function
-        btnHelp.setOnClickListener(v -> 
-            startActivity(new Intent(this, HelpActivity.class))); // فتح شاشة المساعدة عند الضغط
+        btnHelp.setOnClickListener(v -> startActivity(new Intent(this, HelpActivity.class))); // فتح شاشة المساعدة عند
+                                                                                              // الضغط
 
         // ربط زر عرض QR بوظيفته - Link show QR button to its function
         btnShowQr.setOnClickListener(v -> {
@@ -63,7 +65,15 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(this, QrActivity.class).putExtra("mode", "scan"));
             }
         });
-        
+
+        // ربط زر المراسلة بوظيفته - Link messaging button to its function
+        btnMessaging.setOnClickListener(v -> {
+            if (ensurePermissions()) { // التأكد من وجود الأذونات المطلوبة
+                // فتح نشاط المراسلة
+                startActivity(new Intent(this, MessagingActivity.class));
+            }
+        });
+
         // بدء خدمة المكالمات في الخلفية - Start call service in background
         // هذا يضمن أن الجهاز جاهز لاستقبال المكالمات حتى لو أغلق المستخدم التطبيق
         Intent serviceIntent = new Intent(this, CallService.class);
@@ -79,32 +89,32 @@ public class MainActivity extends AppCompatActivity {
      */
     private boolean ensurePermissions() {
         // التحقق من إذن الكاميرا - مطلوب لمسح رموز QR
-        boolean needCamera = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
-                != PackageManager.PERMISSION_GRANTED;
-        
+        boolean needCamera = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED;
+
         // التحقق من إذن الميكروفون - مطلوب لتسجيل الصوت أثناء المكالمات
-        boolean needMic = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) 
-                != PackageManager.PERMISSION_GRANTED;
-        
+        boolean needMic = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED;
+
         // التحقق من إذن الإشعارات - مطلوب في Android 13+ لعرض إشعارات المكالمات الواردة
         boolean needNotif = false;
         if (Build.VERSION.SDK_INT >= 33) { // Android 13 والأحدث
-            needNotif = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
-                    != PackageManager.PERMISSION_GRANTED;
+            needNotif = ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED;
         }
-        
+
         // إذا كان هناك أذونات مفقودة، اطلبها من المستخدم
         if (needCamera || needMic || needNotif) {
             String[] req; // مصفوفة الأذونات المطلوبة
             if (Build.VERSION.SDK_INT >= 33) {
                 // في Android 13+، أضف إذن الإشعارات
-                req = new String[]{Manifest.permission.CAMERA, 
-                                 Manifest.permission.RECORD_AUDIO, 
-                                 Manifest.permission.POST_NOTIFICATIONS};
+                req = new String[] { Manifest.permission.CAMERA,
+                        Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.POST_NOTIFICATIONS };
             } else {
                 // في الإصدارات الأقدم، الكاميرا والميكروفون فقط
-                req = new String[]{Manifest.permission.CAMERA, 
-                                 Manifest.permission.RECORD_AUDIO};
+                req = new String[] { Manifest.permission.CAMERA,
+                        Manifest.permission.RECORD_AUDIO };
             }
             // طلب الأذونات من المستخدم
             ActivityCompat.requestPermissions(this, req, REQ_PERMS);
@@ -118,17 +128,18 @@ public class MainActivity extends AppCompatActivity {
      * يُستدعى تلقائياً عندما يرد المستخدم على طلب الأذونات
      * يتحقق من النتيجة ويعرض رسالة للمستخدم
      * 
-     * @param requestCode رمز الطلب - يحدد أي طلب أذونات تم الرد عليه
-     * @param permissions مصفوفة الأذونات التي تم طلبها
+     * @param requestCode  رمز الطلب - يحدد أي طلب أذونات تم الرد عليه
+     * @param permissions  مصفوفة الأذونات التي تم طلبها
      * @param grantResults مصفوفة النتائج - مُمنوح أم مرفوض لكل إذن
      */
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        
+
         if (requestCode == REQ_PERMS) { // التأكد أن هذا هو طلب الأذونات الخاص بتطبيقنا
             boolean all = true; // متغير لتتبع ما إذا كانت جميع الأذونات مُمنوحة
-            
+
             // فحص كل نتيجة في المصفوفة
             for (int g : grantResults) {
                 if (g != PackageManager.PERMISSION_GRANTED) { // إذا كان أي إذن مرفوض
@@ -136,11 +147,12 @@ public class MainActivity extends AppCompatActivity {
                     break; // إيقاف الفحص
                 }
             }
-            
+
             // عرض رسالة للمستخدم حسب النتيجة
-            Toast.makeText(this, 
-                    all ? "تم منح الأذونات" : "بعض الأذونات مرفوضة", 
+            Toast.makeText(this,
+                    all ? "تم منح الأذونات" : "بعض الأذونات مرفوضة",
                     Toast.LENGTH_SHORT).show();
         }
     }
+
 }
