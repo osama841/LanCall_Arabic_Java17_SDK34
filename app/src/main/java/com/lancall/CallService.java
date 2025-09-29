@@ -26,7 +26,9 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -37,133 +39,205 @@ import java.util.concurrent.Executors;
 
 /**
  * خدمة إدارة المكالمات - تعمل في الخلفية لمعالجة المكالمات الصوتية
+ * هذه الخدمة هي القلب النابض للتطبيق - تدير جميع عمليات المكالمات
+ * تعمل كخدمة في المقدمة (Foreground Service) لضمان استمرار العمل حتى عند إغلاق
+ * التطبيق
+ * تستقبل المكالمات الواردة، تبدأ المكالمات الصادرة، وتدير تبادل البيانات
+ * الصوتية
  * Call Management Service - runs in background to handle voice calls
  */
 public class CallService extends Service {
 
-    private static final String TAG = "CallService";
-    private static final String CHANNEL_ID = "LanCallService";
-    private static final int NOTIFICATION_ID = 1001;
+    private static final String TAG = "CallService"; // تسمية للتسجيل في اللوغ - يساعد في تتبع أخطاء هذه الخدمة
+    private static final String CHANNEL_ID = "LanCallService"; // معرف قناة الإشعارات - يجمع إشعارات الخدمة في مجموعة
+                                                               // واحدة
+    private static final int NOTIFICATION_ID = 1001; // رقم فريد للإشعار - يمكن تحديثه أو إلغاؤه باستخدام هذا الرقم
 
-    // Audio configuration
-    private static final int SAMPLE_RATE = 16000;
-    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
-    private static final int CHANNEL_CONFIG_IN = AudioFormat.CHANNEL_IN_MONO;
-    private static final int CHANNEL_CONFIG_OUT = AudioFormat.CHANNEL_OUT_MONO;
-    private static final int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG_IN, AUDIO_FORMAT);
+    // إعدادات الصوت - Audio configuration
+    private static final int SAMPLE_RATE = 16000; // معدل العينات: 16 ألف عينة في الثانية - جودة عالية للمكالمات الصوتية
+    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT; // تنسيق الصوت: PCM 16 بت - كل عينة صوتية
+                                                                            // تحفظ في 16 بت
+    private static final int CHANNEL_CONFIG_IN = AudioFormat.CHANNEL_IN_MONO; // إعداد التسجيل: قناة واحدة (أحادي) -
+                                                                              // يوفر مساحة ويكفي للصوت البشري
+    private static final int CHANNEL_CONFIG_OUT = AudioFormat.CHANNEL_OUT_MONO; // إعداد التشغيل: قناة واحدة (أحادي) -
+                                                                                // مطابق للتسجيل
+    private static final int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG_IN, AUDIO_FORMAT); // حجم
+                                                                                                                       // الذاكرة
+                                                                                                                       // المؤقتة:
+                                                                                                                       // الحد
+                                                                                                                       // الأدنى
+                                                                                                                       // المطلوب
+                                                                                                                       // لتسجيل
+                                                                                                                       // الصوت
+                                                                                                                       // بهذه
+                                                                                                                       // المواصفات
 
-    // Network configuration
-    public static final int SIGNALING_PORT = 10001;
-    public static final int AUDIO_PORT = 10002;
+    // إعدادات الشبكة - Network configuration
+    public static final int SIGNALING_PORT = 10001; // منفذ إشارات التحكم: يستخدم بروتوكول TCP لإرسال أوامر المكالمة
+                                                    // (بدء، قبول، رفض، إنهاء)
+    public static final int AUDIO_PORT = 10002; // منفذ البيانات الصوتية: يستخدم بروتوكول UDP لنقل الصوت بسرعة عالية
 
-    // Service state
-    private boolean isServiceRunning = false;
-    private boolean isInCall = false;
-    private boolean isMuted = false;
+    // حالة الخدمة - Service state
+    private boolean isServiceRunning = false; // هل الخدمة تعمل؟ - يتحكم في حلقات الاستماع والمعالجة
+    private boolean isInCall = false; // هل توجد مكالمة نشطة؟ - يحدد ما إذا كان هناك تبادل صوتي جاري
+    private boolean isMuted = false; // هل الميكروفون مكتوم؟ - يتحكم في إرسال الصوت للطرف الآخر
 
-    // Network components
-    private ServerSocket signalingServer;
-    private DatagramSocket audioSocket;
-    private ExecutorService executorService;
+    // مكونات الشبكة - Network components
+    private ServerSocket signalingServer; // خادم TCP: يستمع للاتصالات الواردة على منفذ إشارات التحكم
+    private DatagramSocket audioSocket; // مقبس UDP: يرسل ويستقبل حزم البيانات الصوتية
+    private ExecutorService executorService; // مدير المهام المتوازية: ينفذ عدة مهام في نفس الوقت (استماع، إرسال،
+                                             // استقبال)
 
-    // Audio components
-    private AudioRecord audioRecord;
-    private AudioTrack audioTrack;
+    // مكونات الصوت - Audio components
+    private AudioRecord audioRecord; // مسجل الصوت: يلتقط الصوت من الميكروفون ويحوله لبيانات رقمية
+    private AudioTrack audioTrack; // مشغل الصوت: يحول البيانات الرقمية المستقبلة إلى صوت في السماعة
 
-    // Current call information
-    private String remoteIP;
-    private CallState currentCallState = CallState.IDLE;
+    // معلومات المكالمة الحالية - Current call information
+    private String remoteIP; // عنوان IP للجهاز الآخر في المكالمة - يحدد وجهة إرسال البيانات الصوتية
+    private CallState currentCallState = CallState.IDLE; // حالة المكالمة الحالية - تبدأ بـ IDLE (خاملة) وتتغير حسب
+                                                         // مراحل المكالمة
 
-    // Callback interface
+    // واجهة الاستدعاءات المرتدة - Callback interface
+    // تسمح للأنشطة (Activities) بالاستجابة لأحداث المكالمة
     public interface CallServiceCallback {
-        void onIncomingCall(String fromIP);
+        void onIncomingCall(String fromIP); // عند وصول مكالمة واردة - يمرر عنوان IP للمتصل
 
-        void onCallConnected();
+        void onCallConnected(); // عند نجاح الاتصال - يخبر الواجهة أن المكالمة بدأت
 
-        void onCallEnded();
+        void onCallEnded(); // عند انتهاء المكالمة - يخبر الواجهة أن المكالمة انتهت
 
-        void onCallError(String error);
+        void onCallError(String error); // عند حدوث خطأ - يمرر رسالة الخطأ للواجهة
+
+        void onTextMessageReceived(String fromIP, String message); // عند استقبال رسالة نصية - يمرر عنوان IP للمرسل
+                                                                   // والرسالة
     }
 
     private CallServiceCallback callback;
 
+    // حالات المكالمة المختلفة - Different call states
     public enum CallState {
-        IDLE, INCOMING, OUTGOING, CONNECTED, ENDED
+        IDLE, // خاملة - لا توجد مكالمة
+        INCOMING, // واردة - يتم استقبال مكالمة
+        OUTGOING, // صادرة - يتم إجراء مكالمة
+        CONNECTED, // متصلة - المكالمة نشطة وجارية
+        ENDED // منتهية - المكالمة انتهت
     }
 
+    /**
+     * فئة ربط الخدمة - تربط الأنشطة بالخدمة
+     * تسمح للأنشطة بالوصول لدوال ومتغيرات الخدمة
+     * Service binder class - connects activities to the service
+     */
     public class CallServiceBinder extends Binder {
+        /**
+         * حصول على مرجع للخدمة - Get service reference
+         * يمكن الأنشطة من استخدام دوال الخدمة مباشرة
+         */
         public CallService getService() {
-            return CallService.this;
+            return CallService.this; // إرجاع مرجع لهذه الخدمة
         }
     }
 
-    private final IBinder binder = new CallServiceBinder();
+    private final IBinder binder = new CallServiceBinder(); // رابط الخدمة - يسمح للأنشطة بالاتصال بالخدمة
 
+    /**
+     * ربط الخدمة بالأنشطة - Bind service to activities
+     * يستدعى عندما يريد نشاط الاتصال بالخدمة
+     * يعيد مرجعاً للرابط ليتمكن النشاط من استخدام دوال الخدمة
+     */
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return binder;
+        return binder; // إرجاع رابط الخدمة للنشاط الطالب
     }
 
+    /**
+     * إنشاء الخدمة - Service creation
+     * يستدعى مرة واحدة عند إنشاء الخدمة لأول مرة
+     * يقوم بإعداد الموارد الأساسية وقناة الإشعارات
+     */
     @Override
     public void onCreate() {
         super.onCreate();
-        executorService = Executors.newCachedThreadPool();
-        createNotificationChannel();
-        Log.d(TAG, "CallService created");
+        executorService = Executors.newCachedThreadPool(); // إنشاء مجموعة خيوط مرنة - تنشئ خيوط حسب الحاجة وتغلقها عند
+                                                           // عدم الاستخدام
+        createNotificationChannel(); // إنشاء قناة الإشعارات - ضروري لعرض إشعارات الخدمة في Android 8.0+
+        Log.d(TAG, "CallService created"); // تسجيل إنشاء الخدمة في اللوغ للمتابعة
     }
 
+    /**
+     * بدء الخدمة - Service start command
+     * يستدعى عندما يطلب التطبيق بدء الخدمة
+     * يبدأ الخدمة في المقدمة ويبدأ الاستماع للمكالمات
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (!isServiceRunning) {
-            startForegroundService();
-            startListening();
+        if (!isServiceRunning) { // إذا لم تكن الخدمة تعمل بعد
+            startForegroundService(); // بدء الخدمة في المقدمة - يظهر إشعار دائم ويمنع النظام من إيقاف الخدمة
+            startListening(); // بدء الاستماع للمكالمات الواردة - فتح خادم TCP على منفذ الإشارات
         }
-        return START_STICKY;
+        return START_STICKY; // إعادة بدء الخدمة تلقائياً إذا أوقفها النظام لتوفير الذاكرة
     }
 
+    /**
+     * تدمير الخدمة - Service destruction
+     * يستدعى عند إغلاق الخدمة أو عند إغلاق التطبيق
+     * ينظف الموارد ويغلق الاتصالات المفتوحة
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopService();
-        if (executorService != null) {
-            executorService.shutdown();
+        stopService(); // إيقاف جميع عمليات الخدمة وتنظيف الموارد
+        if (executorService != null) { // إذا كان مدير المهام موجوداً
+            executorService.shutdown(); // إغلاق مدير المهام وإنهاء جميع الخيوط العاملة
         }
-        Log.d(TAG, "CallService destroyed");
+        Log.d(TAG, "CallService destroyed"); // تسجيل تدمير الخدمة في اللوغ
     }
 
+    /**
+     * إنشاء قناة الإشعارات - Create notification channel
+     * ضروري في Android 8.0+ لعرض إشعارات الخدمة
+     * يحدد اسم ووصف وأهمية الإشعارات
+     */
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { // فقط في Android 8.0 وما فوق
             NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "خدمة المكالمات",
-                    NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("خدمة معالجة المكالمات المحلية");
-            NotificationManager manager = getSystemService(NotificationManager.class);
+                    CHANNEL_ID, // معرف القناة - يجمع إشعارات الخدمة معاً
+                    "خدمة المكالمات", // اسم القناة الظاهر للمستخدم
+                    NotificationManager.IMPORTANCE_LOW); // أهمية منخفضة - لا تصدر صوتاً ولا تهتز الهاتف
+            channel.setDescription("خدمة معالجة المكالمات المحلية"); // وصف القناة للمستخدم
+            NotificationManager manager = getSystemService(NotificationManager.class); // الحصول على مدير الإشعارات
             if (manager != null) {
-                manager.createNotificationChannel(channel);
+                manager.createNotificationChannel(channel); // تسجيل القناة في النظام
             }
         }
     }
 
+    /**
+     * بدء الخدمة في المقدمة - Start foreground service
+     * يعرض إشعاراً دائماً ويمنع النظام من إيقاف الخدمة
+     * ضروري لضمان استمرار استقبال المكالمات
+     */
     private void startForegroundService() {
-        Intent notificationIntent = new Intent(this, MainActivity.class);
+        Intent notificationIntent = new Intent(this, MainActivity.class); // نية فتح الشاشة الرئيسية عند الضغط على
+                                                                          // الإشعار
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, notificationIntent,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE
-                        : PendingIntent.FLAG_UPDATE_CURRENT);
+                        : PendingIntent.FLAG_UPDATE_CURRENT); // إعداد النية المؤجلة حسب إصدار Android
 
+        // بناء الإشعار باستخدام NotificationCompat للتوافق مع جميع إصدارات Android
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("خدمة مكالمات LanCall")
-                .setContentText("جاهز لاستقبال المكالمات - المنفذ: " + SIGNALING_PORT)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
-                .build();
+                .setContentTitle("خدمة مكالمات LanCall") // عنوار الإشعار
+                .setContentText("جاهز لاستقبال المكالمات - المنفذ: " + SIGNALING_PORT) // نص الإشعار مع معلومات الحالة
+                .setSmallIcon(R.mipmap.ic_launcher) // أيقونة صغيرة في شريط الإشعارات
+                .setContentIntent(pendingIntent) // إجراء عند الضغط على الإشعار
+                .setPriority(NotificationCompat.PRIORITY_LOW) // أولوية منخفضة - لا يزعج المستخدم
+                .setOngoing(true) // إشعار مستمر - لا يمكن مسحه بالسحب
+                .build(); // بناء الإشعار النهائي
 
-        startForeground(NOTIFICATION_ID, notification);
-        isServiceRunning = true;
+        startForeground(NOTIFICATION_ID, notification); // بدء الخدمة في المقدمة مع عرض الإشعار
+        isServiceRunning = true; // تعيين حالة الخدمة كعاملة
     }
 
     private void updateNotification(String text) {
@@ -220,27 +294,75 @@ public class CallService extends Service {
         Log.d(TAG, "Handling signaling connection from: " + clientSocket.getInetAddress());
 
         try {
+            // Set a timeout for reading
+            clientSocket.setSoTimeout(5000); // 5 second timeout
+
             String fromIP = clientSocket.getInetAddress().getHostAddress();
-            remoteIP = fromIP;
-            currentCallState = CallState.INCOMING;
 
-            Log.d(TAG, "Incoming call from: " + fromIP);
+            // Read the incoming message with better handling
+            InputStream inputStream = clientSocket.getInputStream();
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] data = new byte[1024];
+            int nRead;
 
-            // تحديث الإشعار لإظهار المكالمة الواردة
-            updateNotification("مكالمة واردة من: " + fromIP);
+            // Read all available data
+            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+                // Check if we have a complete JSON message
+                String currentData = buffer.toString("UTF-8");
+                if (currentData.trim().endsWith("}")) {
+                    break; // We have a complete JSON message
+                }
+            }
 
-            // لا نبدأ audio streaming تلقائياً - ننتظر المستخدم يضغط "رد"
-            // currentCallState يبقى INCOMING حتى يرد المستخدم
+            buffer.flush();
+            String jsonMessage = buffer.toString("UTF-8");
+            Log.d(TAG, "Received complete message from " + fromIP + ": " + jsonMessage);
 
-            // إرسال إشعار باتصال وارد
-            if (callback != null) {
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    Log.d(TAG, "Calling callback.onIncomingCall for: " + fromIP);
-                    callback.onIncomingCall(fromIP);
-                    // لا نرسل onCallConnected تلقائياً - ننتظر المستخدم يضغط "رد"
-                });
+            // Parse the message
+            SignalingProtocol.Message message = SignalingProtocol.jsonToMessage(jsonMessage);
+
+            if (message != null) {
+                Log.d(TAG, "Parsed message type: " + message.type);
+                if (SignalingProtocol.MESSAGE_TYPE_CALL_REQUEST.equals(message.type)) {
+                    // Handle call request
+                    remoteIP = fromIP;
+                    currentCallState = CallState.INCOMING;
+
+                    Log.d(TAG, "Incoming call from: " + fromIP);
+
+                    // تحديث الإشعار لإظهار المكالمة الواردة
+                    updateNotification("مكالمة واردة من: " + fromIP);
+
+                    // لا نبدأ audio streaming تلقائياً - ننتظر المستخدم يضغط "رد"
+                    // currentCallState يبقى INCOMING حتى يرد المستخدم
+
+                    // إرسال إشعار باتصال وارد
+                    if (callback != null) {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            Log.d(TAG, "Calling callback.onIncomingCall for: " + fromIP);
+                            callback.onIncomingCall(fromIP);
+                            // لا نرسل onCallConnected تلقائياً - ننتظر المستخدم يضغط "رد"
+                        });
+                    } else {
+                        Log.w(TAG, "No callback set for incoming call!");
+                    }
+                } else if (SignalingProtocol.MESSAGE_TYPE_TEXT_MESSAGE.equals(message.type)) {
+                    // Handle text message
+                    SignalingProtocol.TextMessageData textData = (SignalingProtocol.TextMessageData) message.data;
+                    Log.d(TAG, "Received text message from " + fromIP + ": " + textData.message);
+
+                    // Notify the callback about the received text message
+                    if (callback != null) {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            callback.onTextMessageReceived(fromIP, textData.message);
+                        });
+                    }
+                } else {
+                    Log.d(TAG, "Received unknown message type: " + message.type);
+                }
             } else {
-                Log.w(TAG, "No callback set for incoming call!");
+                Log.e(TAG, "Failed to parse incoming message: " + jsonMessage);
             }
 
         } catch (Exception e) {
@@ -270,30 +392,48 @@ public class CallService extends Service {
 
         executorService.execute(() -> {
             try {
-                // محاولة الاتصال بخادم الإشارات في الجهاز المستهدف
-                Socket signalingSocket = new Socket(targetIP, targetPort);
-
-                Log.d(TAG, "Connected to target signaling server");
-
-                // إرسال إشارة بالاتصال
+                // Create call request message
                 String localIP = getLocalIPv4();
-                Log.d(TAG, "Sending call signal from: " + localIP);
+                SignalingProtocol.Message callRequest = SignalingProtocol.createCallRequest(
+                        localIP,
+                        "Caller",
+                        AUDIO_PORT);
+                String jsonMessage = SignalingProtocol.messageToJson(callRequest);
 
-                // إغلاق الاتصال فوراً لتفعيل handleSignalingConnection في الجهة الأخرى
-                signalingSocket.close();
+                if (jsonMessage != null) {
+                    // محاولة الاتصال بخادم الإشارات في الجهاز المستهدف
+                    Socket signalingSocket = new Socket(targetIP, targetPort);
 
-                // انتظار قصير ثم اعتبار الاتصال متصل
-                Thread.sleep(2000);
+                    Log.d(TAG, "Connected to target signaling server");
 
-                currentCallState = CallState.CONNECTED;
-                isInCall = true;
+                    // إرسال إشارة بالاتصال
+                    Log.d(TAG, "Sending call signal from: " + localIP);
+                    signalingSocket.getOutputStream().write(jsonMessage.getBytes("UTF-8"));
+                    signalingSocket.getOutputStream().flush();
 
-                if (callback != null) {
-                    new Handler(Looper.getMainLooper()).post(() -> callback.onCallConnected());
+                    // إغلاق الاتصال فوراً لتفعيل handleSignalingConnection في الجهة الأخرى
+                    signalingSocket.close();
+
+                    // انتظار قصير ثم اعتبار الاتصال متصل
+                    Thread.sleep(2000);
+
+                    currentCallState = CallState.CONNECTED;
+                    isInCall = true;
+
+                    if (callback != null) {
+                        new Handler(Looper.getMainLooper()).post(() -> callback.onCallConnected());
+                    }
+
+                    Log.d(TAG, "Call connected, starting audio streaming");
+                    startAudioStreaming();
+                } else {
+                    Log.e(TAG, "Failed to serialize call request");
+                    currentCallState = CallState.ENDED;
+                    if (callback != null) {
+                        new Handler(Looper.getMainLooper())
+                                .post(() -> callback.onCallError("فشل في إعداد المكالمة"));
+                    }
                 }
-
-                Log.d(TAG, "Call connected, starting audio streaming");
-                startAudioStreaming();
 
             } catch (Exception e) {
                 Log.e(TAG, "Error making call: " + e.getMessage(), e);
@@ -349,6 +489,65 @@ public class CallService extends Service {
         if (callback != null) {
             callback.onCallEnded();
         }
+    }
+
+    /**
+     * إرسال رسالة نصية إلى الجهاز الآخر
+     * Send text message to the other device
+     */
+    public void sendTextMessage(String message) {
+        if (!isInCall || remoteIP == null) {
+            Log.w(TAG, "Not in call or remote IP not set");
+            return;
+        }
+
+        Log.d(TAG, "Attempting to send text message: " + message + " to " + remoteIP);
+
+        executorService.execute(() -> {
+            Socket signalingSocket = null;
+            try {
+                // Create text message
+                String localIP = getLocalIPv4();
+                SignalingProtocol.Message textMessage = SignalingProtocol.createTextMessage(localIP, message);
+                String jsonMessage = SignalingProtocol.messageToJson(textMessage);
+
+                if (jsonMessage != null) {
+                    Log.d(TAG, "Serialized text message: " + jsonMessage);
+                    // Send message via TCP socket
+                    signalingSocket = new Socket(remoteIP, SIGNALING_PORT);
+                    Log.d(TAG, "Connected to signaling server at " + remoteIP + ":" + SIGNALING_PORT);
+
+                    // Set timeout for the socket
+                    signalingSocket.setSoTimeout(5000);
+
+                    signalingSocket.getOutputStream().write(jsonMessage.getBytes("UTF-8"));
+                    signalingSocket.getOutputStream().flush();
+                    Log.d(TAG, "Sent text message to " + remoteIP);
+
+                    // Small delay to ensure message is received
+                    Thread.sleep(100);
+
+                    // Ensure data is sent before closing
+                    signalingSocket.getOutputStream().close();
+
+                    Log.d(TAG, "Text message sent successfully: " + message);
+                } else {
+                    Log.e(TAG, "Failed to serialize text message");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error sending text message: " + e.getMessage(), e);
+            } finally {
+                // Always close the socket
+                if (signalingSocket != null) {
+                    try {
+                        signalingSocket.close();
+                        Log.d(TAG, "Closed signaling socket");
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error closing signaling socket", e);
+                    }
+                }
+            }
+        });
     }
 
     public void toggleMute() {

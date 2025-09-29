@@ -16,6 +16,7 @@ public class SignalingProtocol {
     public static final String MESSAGE_TYPE_AUDIO_DATA = "AUDIO_DATA";
     public static final String MESSAGE_TYPE_KEEP_ALIVE = "KEEP_ALIVE";
     public static final String MESSAGE_TYPE_ERROR = "ERROR";
+    public static final String MESSAGE_TYPE_TEXT_MESSAGE = "TEXT_MESSAGE"; // New message type for text messaging
     
     private static final Gson gson = new Gson();
     
@@ -78,6 +79,20 @@ public class SignalingProtocol {
         public AudioData(byte[] audioBytes, long sequenceNumber) {
             this.audioBytes = audioBytes;
             this.sequenceNumber = sequenceNumber;
+        }
+    }
+    
+    /**
+     * بيانات الرسائل النصية
+     * Text message data
+     */
+    public static class TextMessageData {
+        public String message;
+        public long timestamp;
+        
+        public TextMessageData(String message) {
+            this.message = message;
+            this.timestamp = System.currentTimeMillis();
         }
     }
     
@@ -160,6 +175,15 @@ public class SignalingProtocol {
     public static Message createAudioData(String fromIp, byte[] audioBytes, long sequenceNumber) {
         AudioData data = new AudioData(audioBytes, sequenceNumber);
         return new Message(MESSAGE_TYPE_AUDIO_DATA, fromIp, data);
+    }
+    
+    /**
+     * إنشاء رسالة نصية
+     * Create text message
+     */
+    public static Message createTextMessage(String fromIp, String message) {
+        TextMessageData data = new TextMessageData(message);
+        return new Message(MESSAGE_TYPE_TEXT_MESSAGE, fromIp, data);
     }
     
     /**

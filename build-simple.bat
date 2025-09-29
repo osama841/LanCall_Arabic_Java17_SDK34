@@ -2,13 +2,7 @@
 echo بناء مشروع لان كول...
 echo جار التحقق من متطلبات البناء...
 
-REM Check if Android SDK is available
-if not exist "%ANDROID_HOME%" (
-    echo تحذير: ANDROID_HOME غير محدد
-    echo يجب تثبيت Android SDK أولاً
-    pause
-    exit /b 1
-)
+REM Removed ANDROID_HOME check since it's not required when using Gradle wrapper
 
 echo بناء المشروع...
 call gradlew.bat clean

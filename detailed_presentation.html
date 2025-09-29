@@ -1,360 +1,393 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LanCall Arabic - عرض تقني مفصل</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            overflow: hidden;
-        }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        overflow: hidden;
+      }
 
-        .presentation-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+      .presentation-container {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-        .slide {
-            width: 95%;
-            max-width: 1400px;
-            height: 95%;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
+      .slide {
+        width: 95%;
+        max-width: 1400px;
+        height: 95%;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 25px;
+        display: none;
+        flex-direction: column;
+        justify-content: space-between;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      }
 
-        .slide.active {
-            display: flex;
-            animation: fadeIn 0.5s ease-in-out;
-        }
+      .slide.active {
+        display: flex;
+        animation: fadeIn 0.5s ease-in-out;
+      }
 
-        .slide-header {
-            text-align: center;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
+      .slide-header {
+        text-align: center;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+      }
 
-        .slide-title {
-            font-size: 2.2rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+      .slide-title {
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
 
-        .slide-subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
+      .slide-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
 
-        .slide-content {
-            flex-grow: 1;
-            overflow-y: auto;
-        }
+      .slide-content {
+        flex-grow: 1;
+        overflow-y: auto;
+      }
 
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
-        }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin: 15px 0;
+      }
 
-        .detail-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease;
-        }
+      .detail-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: transform 0.3s ease;
+      }
 
-        .detail-card:hover {
-            transform: translateY(-3px);
-        }
+      .detail-card:hover {
+        transform: translateY(-3px);
+      }
 
-        .detail-title {
-            font-size: 1.1rem;
-            margin-bottom: 8px;
-            color: #4ecdc4;
-            font-weight: bold;
-        }
+      .detail-title {
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+        color: #4ecdc4;
+        font-weight: bold;
+      }
 
-        .code-section {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
-            border-left: 4px solid #4ecdc4;
-            font-size: 0.9rem;
-        }
+      .code-section {
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 15px 0;
+        font-family: "Courier New", monospace;
+        border-left: 4px solid #4ecdc4;
+        font-size: 0.9rem;
+      }
 
-        .layer-detail {
-            background: linear-gradient(45deg, rgba(255, 107, 107, 0.3), rgba(78, 205, 196, 0.3));
-            margin: 8px 0;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+      .layer-detail {
+        background: linear-gradient(
+          45deg,
+          rgba(255, 107, 107, 0.3),
+          rgba(78, 205, 196, 0.3)
+        );
+        margin: 8px 0;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin: 20px 0;
-        }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+        margin: 20px 0;
+      }
 
-        .stat-item {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 12px;
-        }
+      .stat-item {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        border-radius: 12px;
+      }
 
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4ecdc4;
-        }
+      .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #4ecdc4;
+      }
 
-        .navigation {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
+      .navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
 
-        .nav-button {
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+      .nav-button {
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
 
-        .nav-button:hover {
-            transform: scale(1.05);
-        }
+      .nav-button:hover {
+        transform: scale(1.05);
+      }
 
-        .nav-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+      .nav-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-        .slide-counter {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 15px;
-            border-radius: 15px;
-            font-weight: bold;
-        }
+      .slide-counter {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 15px;
+        border-radius: 15px;
+        font-weight: bold;
+      }
 
-        .bullet-list {
-            list-style: none;
-            margin: 10px 0;
-        }
+      .bullet-list {
+        list-style: none;
+        margin: 10px 0;
+      }
 
-        .bullet-list li {
-            margin: 6px 0;
-            padding-right: 20px;
-            position: relative;
-            font-size: 0.9rem;
-        }
+      .bullet-list li {
+        margin: 6px 0;
+        padding-right: 20px;
+        position: relative;
+        font-size: 0.9rem;
+      }
 
-        .bullet-list li::before {
-            content: "▸";
-            position: absolute;
-            right: 0;
-            color: #4ecdc4;
-            font-weight: bold;
-        }
+      .bullet-list li::before {
+        content: "▸";
+        position: absolute;
+        right: 0;
+        color: #4ecdc4;
+        font-weight: bold;
+      }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="presentation-container">
-        <!-- Slide 1: العنوان والإحصائيات -->
-        <div class="slide active">
-            <div class="slide-header">
-                <div class="slide-title">🎯 لان كول العربي - تحليل تقني شامل</div>
-                <div class="slide-subtitle">LanCall Arabic - Complete Technical Deep Dive</div>
-            </div>
-            <div class="slide-content">
-                <div style="text-align: center; margin: 20px 0;">
-                    <div style="font-size: 3rem; margin-bottom: 15px;">📱 ⇄ 📱</div>
-                    <h2 style="color: #4ecdc4; margin-bottom: 15px;">P2P Voice • Real-time Audio • Offline Architecture</h2>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-number">7</div>
-                        <div>ملفات Java</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">1,500+</div>
-                        <div>سطر كود</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">16kHz</div>
-                        <div>جودة الصوت</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">< 100ms</div>
-                        <div>زمن الاستجابة</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">2 Ports</div>
-                        <div>بروتوكولات الشبكة</div>
-                    </div>
-                </div>
-
-                <div class="detail-grid">
-                    <div class="detail-card">
-                        <div class="detail-title">🏗️ هيكل معماري متطور</div>
-                        <p>4 طبقات معمارية مع Service-Oriented Architecture وCallback Pattern</p>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🔊 معالجة الصوت المتقدمة</div>
-                        <p>AudioRecord/AudioTrack مع 16kHz PCM وReal-time Processing</p>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🌐 بروتوكولات مزدوجة</div>
-                        <p>TCP للتحكم (10001) + UDP للصوت (10002)</p>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">📱 واجهة عربية محسنة</div>
-                        <p>RTL Support + Material Design + Edge-to-Edge</p>
-                    </div>
-                </div>
-            </div>
+      <!-- Slide 1: العنوان والإحصائيات -->
+      <div class="slide active">
+        <div class="slide-header">
+          <div class="slide-title">🎯 لان كول العربي - تحليل تقني شامل</div>
+          <div class="slide-subtitle">
+            LanCall Arabic - Complete Technical Deep Dive
+          </div>
         </div>
+        <div class="slide-content">
+          <div style="text-align: center; margin: 20px 0">
+            <div style="font-size: 3rem; margin-bottom: 15px">📱 ⇄ 📱</div>
+            <h2 style="color: #4ecdc4; margin-bottom: 15px">
+              P2P Voice • Real-time Audio • Offline Architecture
+            </h2>
+          </div>
 
-        <!-- Slide 2: الهيكل المعماري -->
-        <div class="slide">
-            <div class="slide-header">
-                <div class="slide-title">🏗️ الهيكل المعماري المفصل</div>
-                <div class="slide-subtitle">Architecture Layers & Component Analysis</div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number">7</div>
+              <div>ملفات Java</div>
             </div>
-            <div class="slide-content">
-                <div class="layer-detail">
-                    🎨 <strong>PRESENTATION LAYER</strong> - UI & User Interaction
-                    <br><small>MainActivity (82 lines) • CallActivity (359 lines) • QrActivity (315 lines)</small>
-                </div>
-                <div class="layer-detail">
-                    ⚙️ <strong>SERVICE LAYER</strong> - Background Processing
-                    <br><small>CallService (552 lines) • Foreground Service • ExecutorService</small>
-                </div>
-                <div class="layer-detail">
-                    📡 <strong>PROTOCOL LAYER</strong> - Network Communication
-                    <br><small>SignalingProtocol (181 lines) • JSON Messages • TCP/UDP</small>
-                </div>
-                <div class="layer-detail">
-                    🔧 <strong>SYSTEM LAYER</strong> - Android APIs
-                    <br><small>AudioRecord/AudioTrack • Socket APIs • WifiManager • Camera</small>
-                </div>
+            <div class="stat-item">
+              <div class="stat-number">1,500+</div>
+              <div>سطر كود</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">16kHz</div>
+              <div>جودة الصوت</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">< 100ms</div>
+              <div>زمن الاستجابة</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">2 Ports</div>
+              <div>بروتوكولات الشبكة</div>
+            </div>
+          </div>
 
-                <div class="detail-grid">
-                    <div class="detail-card">
-                        <div class="detail-title">MainActivity.java</div>
-                        <ul class="bullet-list">
-                            <li>إدارة الأذونات (CAMERA, RECORD_AUDIO, NOTIFICATIONS)</li>
-                            <li>EdgeToEdge UI initialization</li>
-                            <li>CallService startup كـ Foreground Service</li>
-                            <li>Navigation إلى Activities أخرى</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">CallService.java</div>
-                        <ul class="bullet-list">
-                            <li>ServerSocket على المنفذ 10001 (TCP)</li>
-                            <li>DatagramSocket على المنفذ 10002 (UDP)</li>
-                            <li>ExecutorService للمعالجة المتوازية</li>
-                            <li>Audio pipeline management</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">CallActivity.java</div>
-                        <ul class="bullet-list">
-                            <li>Service Binding مع CallService</li>
-                            <li>UI states (Incoming/Outgoing/Connected)</li>
-                            <li>Call duration timer</li>
-                            <li>Audio controls (Mute/Speaker)</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">QrActivity.java</div>
-                        <ul class="bullet-list">
-                            <li>QR Code generation (ZXing)</li>
-                            <li>Camera integration للمسح</li>
-                            <li>lancall:// protocol parsing</li>
-                            <li>IP address validation</li>
-                        </ul>
-                    </div>
-                </div>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">🏗️ هيكل معماري متطور</div>
+              <p>
+                4 طبقات معمارية مع Service-Oriented Architecture وCallback
+                Pattern
+              </p>
             </div>
+            <div class="detail-card">
+              <div class="detail-title">🔊 معالجة الصوت المتقدمة</div>
+              <p>AudioRecord/AudioTrack مع 16kHz PCM وReal-time Processing</p>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">🌐 بروتوكولات مزدوجة</div>
+              <p>TCP للتحكم (10001) + UDP للصوت (10002)</p>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">📱 واجهة عربية محسنة</div>
+              <p>RTL Support + Material Design + Edge-to-Edge</p>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Slide 3: بروتوكولات الشبكة -->
-        <div class="slide">
-            <div class="slide-header">
-                <div class="slide-title">🌐 بروتوكولات الشبكة</div>
-                <div class="slide-subtitle">Network Protocols & Communication Flow</div>
+      <!-- Slide 2: الهيكل المعماري -->
+      <div class="slide">
+        <div class="slide-header">
+          <div class="slide-title">🏗️ الهيكل المعماري المفصل</div>
+          <div class="slide-subtitle">
+            Architecture Layers & Component Analysis
+          </div>
+        </div>
+        <div class="slide-content">
+          <div class="layer-detail">
+            🎨 <strong>PRESENTATION LAYER</strong> - UI & User Interaction
+            <br /><small
+              >MainActivity (82 lines) • CallActivity (359 lines) • QrActivity
+              (315 lines)</small
+            >
+          </div>
+          <div class="layer-detail">
+            ⚙️ <strong>SERVICE LAYER</strong> - Background Processing
+            <br /><small
+              >CallService (552 lines) • Foreground Service •
+              ExecutorService</small
+            >
+          </div>
+          <div class="layer-detail">
+            📡 <strong>PROTOCOL LAYER</strong> - Network Communication
+            <br /><small
+              >SignalingProtocol (181 lines) • JSON Messages • TCP/UDP</small
+            >
+          </div>
+          <div class="layer-detail">
+            🔧 <strong>SYSTEM LAYER</strong> - Android APIs <br /><small
+              >AudioRecord/AudioTrack • Socket APIs • WifiManager •
+              Camera</small
+            >
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">MainActivity.java</div>
+              <ul class="bullet-list">
+                <li>إدارة الأذونات (CAMERA, RECORD_AUDIO, NOTIFICATIONS)</li>
+                <li>EdgeToEdge UI initialization</li>
+                <li>CallService startup كـ Foreground Service</li>
+                <li>Navigation إلى Activities أخرى</li>
+              </ul>
             </div>
-            <div class="slide-content">
-                <div class="detail-grid">
-                    <div class="detail-card">
-                        <div class="detail-title">📡 Signaling Protocol (TCP - Port 10001)</div>
-                        <ul class="bullet-list">
-                            <li><strong>CALL_REQUEST</strong> - طلب مكالمة</li>
-                            <li><strong>CALL_ACCEPT</strong> - قبول مكالمة</li>
-                            <li><strong>CALL_DECLINE</strong> - رفض مكالمة</li>
-                            <li><strong>CALL_END</strong> - إنهاء مكالمة</li>
-                            <li><strong>KEEP_ALIVE</strong> - إبقاء الاتصال</li>
-                            <li><strong>ERROR</strong> - رسائل الأخطاء</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🎵 Audio Stream (UDP - Port 10002)</div>
-                        <ul class="bullet-list">
-                            <li><strong>Sample Rate:</strong> 16,000 Hz</li>
-                            <li><strong>Format:</strong> PCM 16-bit Mono</li>
-                            <li><strong>Buffer:</strong> Optimized for low latency</li>
-                            <li><strong>Frame Rate:</strong> ~50 FPS (20ms)</li>
-                            <li><strong>Protocol:</strong> UDP for speed</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="detail-card">
+              <div class="detail-title">CallService.java</div>
+              <ul class="bullet-list">
+                <li>ServerSocket على المنفذ 10001 (TCP)</li>
+                <li>DatagramSocket على المنفذ 10002 (UDP)</li>
+                <li>ExecutorService للمعالجة المتوازية</li>
+                <li>Audio pipeline management</li>
+              </ul>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">CallActivity.java</div>
+              <ul class="bullet-list">
+                <li>Service Binding مع CallService</li>
+                <li>UI states (Incoming/Outgoing/Connected)</li>
+                <li>Call duration timer</li>
+                <li>Audio controls (Mute/Speaker)</li>
+              </ul>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">QrActivity.java</div>
+              <ul class="bullet-list">
+                <li>QR Code generation (ZXing)</li>
+                <li>Camera integration للمسح</li>
+                <li>lancall:// protocol parsing</li>
+                <li>IP address validation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                <div class="code-section">
-                    <h3>📡 JSON Protocol Example:</h3>
-                    <pre>
+      <!-- Slide 3: بروتوكولات الشبكة -->
+      <div class="slide">
+        <div class="slide-header">
+          <div class="slide-title">🌐 بروتوكولات الشبكة</div>
+          <div class="slide-subtitle">
+            Network Protocols & Communication Flow
+          </div>
+        </div>
+        <div class="slide-content">
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">
+                📡 Signaling Protocol (TCP - Port 10001)
+              </div>
+              <ul class="bullet-list">
+                <li><strong>CALL_REQUEST</strong> - طلب مكالمة</li>
+                <li><strong>CALL_ACCEPT</strong> - قبول مكالمة</li>
+                <li><strong>CALL_DECLINE</strong> - رفض مكالمة</li>
+                <li><strong>CALL_END</strong> - إنهاء مكالمة</li>
+                <li><strong>KEEP_ALIVE</strong> - إبقاء الاتصال</li>
+                <li><strong>ERROR</strong> - رسائل الأخطاء</li>
+              </ul>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">🎵 Audio Stream (UDP - Port 10002)</div>
+              <ul class="bullet-list">
+                <li><strong>Sample Rate:</strong> 16,000 Hz</li>
+                <li><strong>Format:</strong> PCM 16-bit Mono</li>
+                <li><strong>Buffer:</strong> Optimized for low latency</li>
+                <li><strong>Frame Rate:</strong> ~50 FPS (20ms)</li>
+                <li><strong>Protocol:</strong> UDP for speed</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-section">
+            <h3>📡 JSON Protocol Example:</h3>
+            <pre>
 {
   "type": "CALL_REQUEST",
   "fromIp": "192.168.1.5",
@@ -364,12 +397,13 @@
     "audioPort": 10002
   }
 }
-                    </pre>
-                </div>
+                    </pre
+            >
+          </div>
 
-                <div class="code-section">
-                    <h3>🎵 Audio Pipeline Flow:</h3>
-                    <pre>
+          <div class="code-section">
+            <h3>🎵 Audio Pipeline Flow:</h3>
+            <pre>
 Microphone → AudioRecord → Buffer (PCM 16-bit)
     ↓
 DatagramPacket → UDP Socket (Port 10002)
@@ -377,44 +411,47 @@ DatagramPacket → UDP Socket (Port 10002)
 Network Transmission
     ↓
 Remote UDP Receive → AudioTrack → Speaker
-                    </pre>
-                </div>
-            </div>
+                    </pre
+            >
+          </div>
         </div>
+      </div>
 
-        <!-- Slide 4: معالجة الصوت -->
-        <div class="slide">
-            <div class="slide-header">
-                <div class="slide-title">🎵 معالجة الصوت المتقدمة</div>
-                <div class="slide-subtitle">Advanced Audio Processing & Optimization</div>
+      <!-- Slide 4: معالجة الصوت -->
+      <div class="slide">
+        <div class="slide-header">
+          <div class="slide-title">🎵 معالجة الصوت المتقدمة</div>
+          <div class="slide-subtitle">
+            Advanced Audio Processing & Optimization
+          </div>
+        </div>
+        <div class="slide-content">
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">🎤 Audio Recording Configuration</div>
+              <ul class="bullet-list">
+                <li><strong>AudioSource:</strong> VOICE_COMMUNICATION</li>
+                <li><strong>Sample Rate:</strong> 16,000 Hz</li>
+                <li><strong>Channel:</strong> CHANNEL_IN_MONO</li>
+                <li><strong>Encoding:</strong> ENCODING_PCM_16BIT</li>
+                <li><strong>Buffer Size:</strong> getMinBufferSize() × 2</li>
+              </ul>
             </div>
-            <div class="slide-content">
-                <div class="detail-grid">
-                    <div class="detail-card">
-                        <div class="detail-title">🎤 Audio Recording Configuration</div>
-                        <ul class="bullet-list">
-                            <li><strong>AudioSource:</strong> VOICE_COMMUNICATION</li>
-                            <li><strong>Sample Rate:</strong> 16,000 Hz</li>
-                            <li><strong>Channel:</strong> CHANNEL_IN_MONO</li>
-                            <li><strong>Encoding:</strong> ENCODING_PCM_16BIT</li>
-                            <li><strong>Buffer Size:</strong> getMinBufferSize() × 2</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🔊 Audio Playback Configuration</div>
-                        <ul class="bullet-list">
-                            <li><strong>Stream Type:</strong> STREAM_VOICE_CALL</li>
-                            <li><strong>Audio Mode:</strong> MODE_IN_COMMUNICATION</li>
-                            <li><strong>Channel:</strong> CHANNEL_OUT_MONO</li>
-                            <li><strong>Mode:</strong> MODE_STREAM</li>
-                            <li><strong>Latency:</strong> أقل من 100ms</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="detail-card">
+              <div class="detail-title">🔊 Audio Playback Configuration</div>
+              <ul class="bullet-list">
+                <li><strong>Stream Type:</strong> STREAM_VOICE_CALL</li>
+                <li><strong>Audio Mode:</strong> MODE_IN_COMMUNICATION</li>
+                <li><strong>Channel:</strong> CHANNEL_OUT_MONO</li>
+                <li><strong>Mode:</strong> MODE_STREAM</li>
+                <li><strong>Latency:</strong> أقل من 100ms</li>
+              </ul>
+            </div>
+          </div>
 
-                <div class="code-section">
-                    <h3>🔧 Core Audio Processing:</h3>
-                    <pre>
+          <div class="code-section">
+            <h3>🔧 Core Audio Processing:</h3>
+            <pre>
 // Audio Configuration
 private static final int SAMPLE_RATE = 16000;
 private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
@@ -431,196 +468,202 @@ while (isInCall && audioRecord != null) {
     }
     Thread.sleep(20); // ~50 FPS timing
 }
-                    </pre>
-                </div>
+                    </pre
+            >
+          </div>
 
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-number">16kHz</div>
-                        <div>Sample Rate</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">16-bit</div>
-                        <div>PCM Quality</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">20ms</div>
-                        <div>Frame Interval</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">Mono</div>
-                        <div>Channel Config</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">< 100ms</div>
-                        <div>Total Latency</div>
-                    </div>
-                </div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number">16kHz</div>
+              <div>Sample Rate</div>
             </div>
+            <div class="stat-item">
+              <div class="stat-number">16-bit</div>
+              <div>PCM Quality</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">20ms</div>
+              <div>Frame Interval</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">Mono</div>
+              <div>Channel Config</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">< 100ms</div>
+              <div>Total Latency</div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Slide 5: التقنيات والمكتبات -->
-        <div class="slide">
-            <div class="slide-header">
-                <div class="slide-title">🔧 التقنيات والمكتبات</div>
-                <div class="slide-subtitle">Technology Stack & Dependencies</div>
+      <!-- Slide 5: التقنيات والمكتبات -->
+      <div class="slide">
+        <div class="slide-header">
+          <div class="slide-title">🔧 التقنيات والمكتبات</div>
+          <div class="slide-subtitle">Technology Stack & Dependencies</div>
+        </div>
+        <div class="slide-content">
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">🤖 Android Framework</div>
+              <ul class="bullet-list">
+                <li><strong>Target SDK:</strong> 34 (Android 14)</li>
+                <li><strong>Min SDK:</strong> 24 (Android 7.0)</li>
+                <li><strong>Java Version:</strong> 17</li>
+                <li><strong>Gradle:</strong> 8.4.2</li>
+              </ul>
             </div>
-            <div class="slide-content">
-                <div class="detail-grid">
-                    <div class="detail-card">
-                        <div class="detail-title">🤖 Android Framework</div>
-                        <ul class="bullet-list">
-                            <li><strong>Target SDK:</strong> 34 (Android 14)</li>
-                            <li><strong>Min SDK:</strong> 24 (Android 7.0)</li>
-                            <li><strong>Java Version:</strong> 17</li>
-                            <li><strong>Gradle:</strong> 8.4.2</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🎨 UI Components</div>
-                        <ul class="bullet-list">
-                            <li><strong>AppCompat:</strong> 1.7.0</li>
-                            <li><strong>Material Design:</strong> 1.12.0</li>
-                            <li><strong>ConstraintLayout:</strong> 2.1.4</li>
-                            <li><strong>Fragment:</strong> 1.6.2</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">📷 QR Processing</div>
-                        <ul class="bullet-list">
-                            <li><strong>ZXing Core:</strong> 3.4.1</li>
-                            <li><strong>ZXing Android:</strong> 4.1.0</li>
-                            <li><strong>Resolution:</strong> 800×800px</li>
-                            <li><strong>Format:</strong> QR_CODE</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🌐 Network Stack</div>
-                        <ul class="bullet-list">
-                            <li><strong>Java-WebSocket:</strong> 1.5.3</li>
-                            <li><strong>Gson:</strong> 2.10.1</li>
-                            <li><strong>TCP/UDP:</strong> Java.net</li>
-                            <li><strong>WiFi:</strong> Android APIs</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="detail-card">
+              <div class="detail-title">🎨 UI Components</div>
+              <ul class="bullet-list">
+                <li><strong>AppCompat:</strong> 1.7.0</li>
+                <li><strong>Material Design:</strong> 1.12.0</li>
+                <li><strong>ConstraintLayout:</strong> 2.1.4</li>
+                <li><strong>Fragment:</strong> 1.6.2</li>
+              </ul>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">📷 QR Processing</div>
+              <ul class="bullet-list">
+                <li><strong>ZXing Core:</strong> 3.4.1</li>
+                <li><strong>ZXing Android:</strong> 4.1.0</li>
+                <li><strong>Resolution:</strong> 800×800px</li>
+                <li><strong>Format:</strong> QR_CODE</li>
+              </ul>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">🌐 Network Stack</div>
+              <ul class="bullet-list">
+                <li><strong>Java-WebSocket:</strong> 1.5.3</li>
+                <li><strong>Gson:</strong> 2.10.1</li>
+                <li><strong>TCP/UDP:</strong> Java.net</li>
+                <li><strong>WiFi:</strong> Android APIs</li>
+              </ul>
+            </div>
+          </div>
 
-                <div class="code-section">
-                    <h3>📦 Key Dependencies:</h3>
-                    <pre>
+          <div class="code-section">
+            <h3>📦 Key Dependencies:</h3>
+            <pre>
 implementation 'androidx.appcompat:appcompat:1.7.0'
 implementation 'com.google.android.material:material:1.12.0'
 implementation 'com.google.zxing:core:3.4.1'
 implementation 'com.journeyapps:zxing-android-embedded:4.1.0'
 implementation 'org.java-websocket:Java-WebSocket:1.5.3'
 implementation 'com.google.code.gson:gson:2.10.1'
-                    </pre>
-                </div>
-            </div>
+                    </pre
+            >
+          </div>
         </div>
+      </div>
 
-        <!-- Slide 6: الختام -->
-        <div class="slide">
-            <div class="slide-header">
-                <div class="slide-title">🎉 الخلاصة التقنية</div>
-                <div class="slide-subtitle">Technical Summary & Future Roadmap</div>
-            </div>
-            <div class="slide-content">
-                <div style="text-align: center; margin: 20px 0;">
-                    <div style="font-size: 3rem; margin-bottom: 15px;">✨</div>
-                    <h2 style="color: #4ecdc4;">LanCall Arabic - حل تقني متكامل</h2>
-                </div>
-
-                <div class="detail-grid">
-                    <div class="detail-card">
-                        <div class="detail-title">🏆 الإنجازات التقنية</div>
-                        <ul class="bullet-list">
-                            <li>هيكل معماري متطور مع 4 طبقات</li>
-                            <li>بروتوكولات شبكة مزدوجة (TCP+UDP)</li>
-                            <li>معالجة صوت real-time عالية الجودة</li>
-                            <li>واجهة عربية محسنة مع RTL</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">📈 المؤشرات الفنية</div>
-                        <ul class="bullet-list">
-                            <li>زمن استجابة أقل من 100ms</li>
-                            <li>جودة صوت 16kHz PCM</li>
-                            <li>استهلاك ذاكرة أقل من 20MB</li>
-                            <li>دعم Android 7.0+ devices</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🚀 التطوير المستقبلي</div>
-                        <ul class="bullet-list">
-                            <li>إضافة تشفير end-to-end</li>
-                            <li>دعم مكالمات جماعية</li>
-                            <li>تحسين جودة الصوت</li>
-                            <li>دعم WiFi Direct</li>
-                        </ul>
-                    </div>
-                    <div class="detail-card">
-                        <div class="detail-title">🔗 معلومات المشروع</div>
-                        <ul class="bullet-list">
-                            <li>Repository: github.com/osama841/offline-client-servers</li>
-                            <li>Platform: Android (Java 17)</li>
-                            <li>License: Open Source</li>
-                            <li>للمجتمع العربي بعناية ❤️</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+      <!-- Slide 6: الختام -->
+      <div class="slide">
+        <div class="slide-header">
+          <div class="slide-title">🎉 الخلاصة التقنية</div>
+          <div class="slide-subtitle">Technical Summary & Future Roadmap</div>
         </div>
+        <div class="slide-content">
+          <div style="text-align: center; margin: 20px 0">
+            <div style="font-size: 3rem; margin-bottom: 15px">✨</div>
+            <h2 style="color: #4ecdc4">LanCall Arabic - حل تقني متكامل</h2>
+          </div>
 
-        <!-- Navigation -->
-        <div class="navigation">
-            <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">← السابق</button>
-            <div class="slide-counter">
-                <span id="currentSlide">1</span> / <span id="totalSlides">6</span>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">🏆 الإنجازات التقنية</div>
+              <ul class="bullet-list">
+                <li>هيكل معماري متطور مع 4 طبقات</li>
+                <li>بروتوكولات شبكة مزدوجة (TCP+UDP)</li>
+                <li>معالجة صوت real-time عالية الجودة</li>
+                <li>واجهة عربية محسنة مع RTL</li>
+              </ul>
             </div>
-            <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">التالي →</button>
+            <div class="detail-card">
+              <div class="detail-title">📈 المؤشرات الفنية</div>
+              <ul class="bullet-list">
+                <li>زمن استجابة أقل من 100ms</li>
+                <li>جودة صوت 16kHz PCM</li>
+                <li>استهلاك ذاكرة أقل من 20MB</li>
+                <li>دعم Android 7.0+ devices</li>
+              </ul>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">🚀 التطوير المستقبلي</div>
+              <ul class="bullet-list">
+                <li>إضافة تشفير end-to-end</li>
+                <li>دعم مكالمات جماعية</li>
+                <li>تحسين جودة الصوت</li>
+                <li>دعم WiFi Direct</li>
+              </ul>
+            </div>
+            <div class="detail-card">
+              <div class="detail-title">🔗 معلومات المشروع</div>
+              <ul class="bullet-list">
+                <li>Repository: github.com/osama841/offline-client-servers</li>
+                <li>Platform: Android (Java 17)</li>
+                <li>License: Open Source</li>
+                <li>للمجتمع العربي بعناية ❤️</li>
+              </ul>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="navigation">
+        <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">
+          ← السابق
+        </button>
+        <div class="slide-counter">
+          <span id="currentSlide">1</span> / <span id="totalSlides">6</span>
+        </div>
+        <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">
+          التالي →
+        </button>
+      </div>
     </div>
 
     <script>
-        let currentSlideIndex = 0;
-        const slides = document.querySelectorAll('.slide');
-        const totalSlides = slides.length;
+      let currentSlideIndex = 0;
+      const slides = document.querySelectorAll(".slide");
+      const totalSlides = slides.length;
 
-        function showSlide(index) {
-            slides.forEach(slide => slide.classList.remove('active'));
-            slides[index].classList.add('active');
-            
-            document.getElementById('currentSlide').textContent = index + 1;
-            document.getElementById('totalSlides').textContent = totalSlides;
-            
-            document.getElementById('prevBtn').disabled = index === 0;
-            document.getElementById('nextBtn').disabled = index === totalSlides - 1;
+      function showSlide(index) {
+        slides.forEach((slide) => slide.classList.remove("active"));
+        slides[index].classList.add("active");
+
+        document.getElementById("currentSlide").textContent = index + 1;
+        document.getElementById("totalSlides").textContent = totalSlides;
+
+        document.getElementById("prevBtn").disabled = index === 0;
+        document.getElementById("nextBtn").disabled = index === totalSlides - 1;
+      }
+
+      function changeSlide(direction) {
+        currentSlideIndex += direction;
+
+        if (currentSlideIndex < 0) {
+          currentSlideIndex = 0;
+        } else if (currentSlideIndex >= totalSlides) {
+          currentSlideIndex = totalSlides - 1;
         }
 
-        function changeSlide(direction) {
-            currentSlideIndex += direction;
-            
-            if (currentSlideIndex < 0) {
-                currentSlideIndex = 0;
-            } else if (currentSlideIndex >= totalSlides) {
-                currentSlideIndex = totalSlides - 1;
-            }
-            
-            showSlide(currentSlideIndex);
+        showSlide(currentSlideIndex);
+      }
+
+      // Keyboard navigation
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          changeSlide(-1);
+        } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          changeSlide(1);
         }
+      });
 
-        // Keyboard navigation
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-                changeSlide(-1);
-            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-                changeSlide(1);
-            }
-        });
-
-        // Initialize
-        showSlide(0);
+      // Initialize
+      showSlide(0);
     </script>
-</body>
+  </body>
 </html>

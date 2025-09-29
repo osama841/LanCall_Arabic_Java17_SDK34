@@ -6,7 +6,11 @@
     <string name="btn_help">تعليمات الاستخدام</string>
     <string name="qr_title">رمز جهازك (IPv4)</string>
     <string name="help_title">تعليمات</string>
-    <string name="help_text">\u2022 اشبك الجهازين على نفس الشبكة (واي-فاي واحد أو هوتسبوت بدون إنترنت)\n\u2022 على هذا الجهاز: اضغط "عرض QR" لمشاركة العنوان\n\u2022 على الجهاز الآخر: اضغط "مسح QR" لإضافتك\n\u2022 يفضّل IPv4 (مثل 192.168.x.x). إذا ظهر عنوان fe80:: فهذا IPv6 وقد يفشل الاتصال على بعض الشبكات.\n\u2022 عطّل تحسين البطارية ومنح الأذونات (كاميرا/مايك/إشعارات/الظهور فوق التطبيقات) لضمان الاستقرار.</string>
+    <string name="help_text">\u2022 اشبكizes على نفس الشبكة (واي-فاي واحد أو هوتسبوت بدون إنترنت)
+\u2022 على هذا الجهاز: اضغط "عرض QR" لمشاركة العنوان
+\u2022 على الجهاز الآخر: اضغط "مسح QR" لإضافتك
+\u2022 يفضّل IPv4 (مثل 192.168.x.x). إذا ظهر عنوان fe80:: فهذا IPv6 وقد يفشل الاتصال على بعض الشبكات.
+\u2022 عطّل تحسين البطارية ومنح الأذونات (كاميرا/مايك/إشعارات/الظهور فوق التطبيقات) لضمان الاستقرار.</string>
     <string name="qr_ipv4_missing">تعذر الحصول على عنوان IPv4. تأكد أنك متصل بشبكة واي-فاي.</string>
     
     <!-- Call Activity Strings -->
@@ -21,6 +25,13 @@
     <string name="btn_unmute">إلغاء كتم الصوت</string>
     <string name="btn_speaker">مكبر الصوت</string>
     <string name="call_duration">مدة المكالمة: %s</string>
+    
+    <!-- Messaging Strings -->
+    <string name="hint_message">اكتب رسالتك هنا</string>
+    <string name="btn_send">إرسال</string>
+    <string name="message_sent">تم إرسال الرسالة</string>
+    <string name="message_empty">الرجاء إدخال رسالة</string>
+    <string name="message_received" formatted="false">رسالة من %s: %s</string>
     
     <!-- Error Messages -->
     <string name="error_connection_failed">فشل الاتصال</string>

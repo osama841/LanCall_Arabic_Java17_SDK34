@@ -352,6 +352,17 @@ public class CallActivity extends AppCompatActivity implements CallService.CallS
     }
 
     @Override
+    public void onTextMessageReceived(String fromIP, String message) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "Received text message: " + message);
+            // For now, we'll just show a toast with the received message
+            // In a more complete implementation, we would display the message in a chat view
+            String toastMessage = getString(R.string.message_received, fromIP, message);
+            Toast.makeText(this, toastMessage, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    @Override
     public void onBackPressed() {
         // Prevent accidental call termination
         // User must use End Call button

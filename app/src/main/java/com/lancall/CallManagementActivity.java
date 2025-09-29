@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,6 +36,8 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
     private MaterialButton btnEndCall;
     private MaterialButton btnMute;
     private MaterialButton btnSpeaker;
+    private EditText etMessage;
+    private MaterialButton btnSend;
 
     // Service connection
     private CallService callService;
@@ -111,6 +114,8 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
         btnEndCall = findViewById(R.id.btnEndCall);
         btnMute = findViewById(R.id.btnMute);
         btnSpeaker = findViewById(R.id.btnSpeaker);
+        etMessage = findViewById(R.id.etMessage);
+        btnSend = findViewById(R.id.btnSend);
 
         // Set initial values
         tvCallStatus.setText(R.string.call_connected);
@@ -123,6 +128,7 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
         btnEndCall.setOnClickListener(v -> endCall());
         btnMute.setOnClickListener(v -> toggleMute());
         btnSpeaker.setOnClickListener(v -> toggleSpeaker());
+        btnSend.setOnClickListener(v -> sendMessage());
     }
 
     private void updateUIFromService() {
@@ -203,6 +209,19 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
         }
     }
 
+    private void sendMessage() {
+        if (callService != null && etMessage != null) {
+            String message = etMessage.getText().toString().trim();
+            if (!message.isEmpty()) {
+                callService.sendTextMessage(message);
+                etMessage.setText(""); // Clear the input field
+                Toast.makeText(this, R.string.message_sent, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, R.string.message_empty, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     private void startDurationTimer() {
         durationUpdateRunnable = new Runnable() {
             @Override
@@ -273,6 +292,18 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
             Log.e(TAG, "Call error: " + error);
             Toast.makeText(this, error, Toast.LENGTH_LONG).show();
             finish();
+        });
+    }
+
+    @Override
+    public void onTextMessageReceived(String fromIP, String message) {
+        Log.d(TAG, "onTextMessageReceived called with message: " + message + " from " + fromIP);
+        runOnUiThread(() -> {
+            Log.d(TAG, "Received text message: " + message);
+            // For now, we'll just show a toast with the received message
+            // In a more complete implementation, we would display the message in a chat view
+            String toastMessage = getString(R.string.message_received, fromIP, message);
+            Toast.makeText(this, toastMessage, Toast.LENGTH_LONG).show();
         });
     }
 

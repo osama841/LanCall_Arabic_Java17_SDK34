@@ -3,9 +3,11 @@
 ## 📋 نظرة عامة على المشروع
 
 ### 🎯 الهدف من المشروع
+
 تطبيق اندرويد للمكالمات الصوتية المباشرة عبر الشبكة المحلية باللغة العربية، يعمل بدون الحاجة لاتصال بالإنترنت ويستهدف المجتمعات المحلية والبيئات المعزولة.
 
 ### 🌟 المفهوم الأساسي
+
 - **P2P Voice Communication**: اتصال مباشر بين جهازين في نفس الشبكة
 - **Offline Operation**: يعمل بالكامل بدون إنترنت
 - **Arabic-First Design**: واجهة مصممة بالكامل باللغة العربية
@@ -16,6 +18,7 @@
 ## 🏗️ الهيكل المعماري للمشروع
 
 ### 📱 Architecture Pattern
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    PRESENTATION LAYER                       │
@@ -39,6 +42,7 @@
 ### 🔧 Core Components
 
 #### 1. **MainActivity.java** - الشاشة الرئيسية
+
 - **الوظيفة**: نقطة الدخول الرئيسية للتطبيق
 - **المسؤوليات**:
   - إدارة الأذونات (Camera, Microphone, Notifications)
@@ -50,6 +54,7 @@
   - `EdgeToEdge` للتصميم الحديث
 
 #### 2. **CallService.java** - خدمة إدارة المكالمات
+
 - **الوظيفة**: القلب النابض للتطبيق - يدير جميع عمليات الاتصال والصوت
 - **المسؤوليات**:
   - **Signaling Server**: استقبال طلبات الاتصال على المنفذ 10001
@@ -63,6 +68,7 @@
   - `ExecutorService` للمعالجة المتوازية
 
 #### 3. **CallActivity.java** - واجهة المكالمة
+
 - **الوظيفة**: إدارة واجهة المستخدم أثناء المكالمة
 - **المسؤوليات**:
   - عرض حالة المكالمة (وارد/صادر/متصل)
@@ -75,6 +81,7 @@
   - إدارة دورة حياة المكالمة
 
 #### 4. **QrActivity.java** - إدارة QR Code
+
 - **الوظيفة**: ربط الأجهزة بطريقة سهلة عبر QR
 - **المسؤوليات**:
   - **إنشاء QR Code**: عرض عنوان IP الجهاز
@@ -87,6 +94,7 @@
   - Pattern validation للتحقق من البيانات
 
 #### 5. **SignalingProtocol.java** - بروتوكول التواصل
+
 - **الوظيفة**: تعريف رسائل التواصل بين الأجهزة
 - **أنواع الرسائل**:
   - `CALL_REQUEST`: طلب مكالمة
@@ -104,6 +112,7 @@
 ## 🔧 التقنيات والمكتبات المستخدمة
 
 ### 📱 Android Framework
+
 - **Target SDK**: 34 (Android 14)
 - **Min SDK**: 24 (Android 7.0)
 - **Java Version**: 17
@@ -112,39 +121,49 @@
 ### 📚 المكتبات الخارجية
 
 #### 1. **Material Design**
+
 ```gradle
 implementation 'com.google.android.material:material:1.12.0'
 ```
+
 - واجهة مستخدم عصرية ومتجاوبة
 - أزرار Material وتصميم متسق
 
 #### 2. **QR Code Processing**
+
 ```gradle
 implementation 'com.google.zxing:core:3.4.1'
 implementation 'com.journeyapps:zxing-android-embedded:4.1.0'
 ```
+
 - إنشاء ومسح QR codes
 - مكتبة محسنة للهواتف المحمولة
 
 #### 3. **Network Communication**
+
 ```gradle
 implementation 'org.java-websocket:Java-WebSocket:1.5.3'
 ```
+
 - معالجة الاتصالات الشبكية المتقدمة
 - دعم للاتصالات غير المتزامنة
 
 #### 4. **JSON Processing**
+
 ```gradle
 implementation 'com.google.code.gson:gson:2.10.1'
 ```
+
 - تحويل الرسائل إلى JSON وبالعكس
 - معالجة بروتوكول التواصل
 
 #### 5. **Android Jetpack**
+
 ```gradle
 implementation 'androidx.fragment:fragment:1.6.2'
 implementation 'androidx.lifecycle:lifecycle-service:2.7.0'
 ```
+
 - إدارة دورة حياة التطبيق
 - خدمات متقدمة للعمل في الخلفية
 
@@ -168,14 +187,16 @@ graph TB
 ### 📡 بروتوكولات الشبكة
 
 #### 1. **Signaling Layer** (TCP)
+
 - **المنفذ**: 10001
 - **الوظيفة**: تبادل معلومات الاتصال والتحكم
 - **الرسائل**: Call Request/Accept/Decline/End
 
 #### 2. **Audio Streaming Layer** (UDP)
+
 - **المنفذ**: 10002
 - **الوظيفة**: نقل البيانات الصوتية
-- **التكوين**: 
+- **التكوين**:
   - Sample Rate: 16kHz
   - Format: PCM 16-bit
   - Channel: Mono
@@ -184,12 +205,14 @@ graph TB
 ### 🎵 معالجة الصوت
 
 #### **Audio Pipeline**
+
 ```
 Microphone → AudioRecord → Buffer → UDP Packet → Network
 Network → UDP Packet → Buffer → AudioTrack → Speaker
 ```
 
 #### **خصائص الصوت**
+
 - **جودة عالية**: 16kHz sampling rate
 - **زمن استجابة منخفض**: ~40ms total latency
 - **ضغط البيانات**: PCM raw audio (no compression)
@@ -200,6 +223,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ## 🎨 تصميم واجهة المستخدم
 
 ### 🌍 Arabic-First Design
+
 - **Right-to-Left (RTL) Support**: دعم كامل للغة العربية
 - **Arabic Typography**: خطوط محسنة للعربية
 - **Cultural Design**: تصميم يناسب المستخدم العربي
@@ -207,6 +231,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 📱 الشاشات الرئيسية
 
 #### 1. **MainActivity** - الشاشة الرئيسية
+
 ```xml
 ┌─────────────────────────┐
 │     لان كول            │
@@ -219,6 +244,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ```
 
 #### 2. **QrActivity** - شاشة QR
+
 ```xml
 ┌─────────────────────────┐
 │   رمز جهازك (IPv4)      │
@@ -233,6 +259,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ```
 
 #### 3. **CallActivity** - شاشة المكالمة
+
 ```xml
 ┌─────────────────────────┐
 │      مكالمة واردة        │
@@ -253,6 +280,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 🛡️ الأذونات المطلوبة
 
 #### **أذونات أساسية**
+
 ```xml
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.CAMERA"/>
@@ -261,6 +289,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ```
 
 #### **أذونات متقدمة**
+
 ```xml
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -268,6 +297,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ```
 
 ### 🔐 إجراءات الأمان
+
 - **Local Network Only**: العمل فقط في الشبكة المحلية
 - **No Internet Data**: عدم إرسال أي بيانات للإنترنت
 - **Permission Validation**: فحص دقيق للأذونات
@@ -280,17 +310,20 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 🚀 تحسينات الأداء
 
 #### **Audio Performance**
-- **Low Latency Configuration**: 
+
+- **Low Latency Configuration**:
   - Buffer size optimization
   - Audio source: `VOICE_COMMUNICATION`
   - Audio mode: `MODE_IN_COMMUNICATION`
 
 #### **Network Performance**
+
 - **UDP for Audio**: استخدام UDP لتقليل زمن الاستجابة
 - **TCP for Control**: استخدام TCP للموثوقية في التحكم
 - **Separate Threads**: معالجة متوازية للإرسال والاستقبال
 
 #### **Memory Management**
+
 - **Object Reuse**: إعادة استخدام buffers
 - **Garbage Collection**: تقليل إنشاء objects جديدة
 - **Native Audio**: استخدام Android Audio APIs المحسنة
@@ -302,22 +335,26 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 🔍 أنواع الاختبارات
 
 #### **1. Unit Testing**
+
 - فحص المكونات الفردية
 - SignalingProtocol message handling
 - IP address validation
 - QR code generation/parsing
 
 #### **2. Integration Testing**
+
 - CallService integration
 - Audio pipeline testing
 - Network communication testing
 
 #### **3. Performance Testing**
+
 - Audio latency measurement
 - Memory usage monitoring
 - Battery consumption analysis
 
 #### **4. Device Compatibility**
+
 - Multiple Android versions
 - Different screen sizes
 - Various network configurations
@@ -343,6 +380,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ```
 
 ### 📊 معايير الأداء
+
 - **Audio Latency**: < 100ms
 - **Connection Time**: < 3 seconds
 - **Call Quality**: 16kHz PCM
@@ -356,21 +394,25 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 🔮 إمكانيات التطوير
 
 #### **1. Enhanced Audio**
+
 - **Multiple Codecs**: دعم G.711, G.722, Opus
 - **Noise Cancellation**: إلغاء الضوضاء المتقدم
 - **Audio Enhancement**: تحسين جودة الصوت
 
 #### **2. Advanced Features**
+
 - **Group Calls**: مكالمات جماعية
 - **File Sharing**: مشاركة الملفات
 - **Text Messaging**: رسائل نصية مصاحبة
 
 #### **3. Network Improvements**
+
 - **WiFi Direct**: اتصال مباشر بدون router
 - **Bluetooth**: دعم اتصال Bluetooth
 - **Ad-hoc Networks**: إنشاء شبكات مؤقتة
 
 #### **4. Security Enhancements**
+
 - **End-to-End Encryption**: تشفير قوي
 - **Authentication**: نظام تحقق متقدم
 - **Privacy Controls**: تحكم في الخصوصية
@@ -382,21 +424,25 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 🏠 السيناريوهات العملية
 
 #### **1. البيئات المنزلية**
+
 - التواصل بين غرف المنزل
 - نظام اتصال داخلي للعائلة
 - مراقبة الأطفال عن بُعد
 
 #### **2. البيئات التجارية**
+
 - اتصال في المكاتب والمستودعات
 - التواصل في المصانع
 - نظام اتصال للمحلات التجارية
 
 #### **3. الحالات الطارئة**
+
 - الاتصال عند انقطاع الإنترنت
 - التواصل في المناطق النائية
 - أنظمة الطوارئ المحلية
 
 #### **4. التعليم والتدريب**
+
 - اتصال في القاعات الدراسية
 - نظام تدريب للمؤسسات
 - ورش العمل التفاعلية
@@ -408,6 +454,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 🔧 متطلبات التطوير
 
 #### **Environment Setup**
+
 ```bash
 # Android Studio Requirements
 - Android Studio Hedgehog | 2023.1.1+
@@ -421,6 +468,7 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ```
 
 #### **Development Tools**
+
 - **IDE**: Android Studio
 - **Version Control**: Git
 - **Testing**: JUnit + Espresso
@@ -429,19 +477,21 @@ Network → UDP Packet → Buffer → AudioTrack → Speaker
 ### 📋 إرشادات المساهمة
 
 #### **Code Style**
+
 - **Java Naming**: CamelCase للفئات، camelCase للمتغيرات
 - **Arabic Comments**: تعليقات باللغة العربية
 - **Documentation**: توثيق شامل للدوال
 - **Error Handling**: معالجة شاملة للأخطاء
 
 #### **Git Workflow**
+
 ```bash
 # Feature Development
 git checkout -b feature/new-feature
 git commit -m "Add: وصف المميزة الجديدة"
 git push origin feature/new-feature
 
-# Bug Fixes  
+# Bug Fixes
 git checkout -b fix/bug-description
 git commit -m "Fix: وصف إصلاح الخطأ"
 ```
@@ -451,6 +501,7 @@ git commit -m "Fix: وصف إصلاح الخطأ"
 ## 📝 الخلاصة والتوصيات
 
 ### ✅ نقاط القوة
+
 1. **تصميم عربي أصيل**: واجهة مصممة بالكامل للمستخدم العربي
 2. **تقنية متقدمة**: استخدام أحدث تقنيات Android
 3. **أداء عالي**: زمن استجابة منخفض وجودة صوت ممتازة
@@ -458,6 +509,7 @@ git commit -m "Fix: وصف إصلاح الخطأ"
 5. **موثوقية**: عمل مستقر في البيئات المختلفة
 
 ### 🔄 التحسينات المقترحة
+
 1. **إضافة تشفير**: لتعزيز الأمان
 2. **دعم مكالمات جماعية**: لاستخدامات أوسع
 3. **واجهة محسنة**: المزيد من التخصيص
@@ -465,6 +517,7 @@ git commit -m "Fix: وصف إصلاح الخطأ"
 5. **توثيق أكثر**: للمطورين
 
 ### 🎉 الإنجاز
+
 مشروع **LanCall Arabic** يمثل حلاً متكاملاً ومبتكراً للمكالمات المحلية، يجمع بين التقنية المتقدمة والتصميم المحلي، ويوفر تجربة استخدام سلسة وموثوقة للمستخدمين العرب.
 
 ---
@@ -477,6 +530,7 @@ git commit -m "Fix: وصف إصلاح الخطأ"
 - **Maintainer**: تم تطويره بعناية للمجتمع العربي
 
 **🔗 روابط مفيدة:**
+
 - [Android Developer Guide](https://developer.android.com/)
 - [Material Design Guidelines](https://material.io/design)
 - [ZXing Documentation](https://github.com/zxing/zxing)
