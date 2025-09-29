@@ -288,7 +288,7 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
             return;
         }
 
-        if (!isConnected) {
+        if (!isConnected || remoteIpAddress == null) {
             Toast.makeText(this, "لا يوجد اتصال بجهاز آخر", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -314,16 +314,12 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
                 // Update message status to SENT on success
                 runOnUiThread(() -> {
                     message.setStatus(Message.MessageStatus.SENT);
-                    // Find the message in adapter and update its status
-                    // In a real implementation, you would have a better way to track messages
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Failed to send message", e);
                 // Update message status to FAILED on error
                 runOnUiThread(() -> {
                     message.setStatus(Message.MessageStatus.FAILED);
-                    // Find the message in adapter and update its status
-                    // In a real implementation, you would have a better way to track messages
                 });
             }
         }).start();
@@ -445,6 +441,11 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
                             // Update connection status
                             isConnected = true;
                             updateConnectionStatus();
+                            
+                            // Set remote IP in CallService for messaging
+                            if (callService != null) {
+                                callService.setRemoteIPForMessaging(remoteIpAddress);
+                            }
                         } else {
                             Toast.makeText(this, "عنوان IP غير صالح", Toast.LENGTH_SHORT).show();
                         }
