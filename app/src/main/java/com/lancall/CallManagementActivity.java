@@ -58,7 +58,7 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
             isServiceBound = true;
 
             Log.d(TAG, "CallService connected");
-            
+
             // Initialize UI with current call state
             updateUIFromService();
         }
@@ -158,7 +158,8 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
             if (audioManager != null) {
                 boolean isSpeakerOn = audioManager.isSpeakerphoneOn();
                 btnSpeaker.setText(isSpeakerOn ? "🔊" : "📢");
-                btnSpeaker.setBackgroundColor(isSpeakerOn ? getColor(R.color.button_active) : getColor(R.color.button_inactive));
+                btnSpeaker.setBackgroundColor(
+                        isSpeakerOn ? getColor(R.color.button_active) : getColor(R.color.button_inactive));
             }
 
             Log.d(TAG, "Control buttons updated - Muted: " + isMuted);
@@ -199,7 +200,8 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
 
                 // تحديث نص والخلفية الزر
                 btnSpeaker.setText(!isSpeakerOn ? "🔊" : "📢");
-                btnSpeaker.setBackgroundColor(!isSpeakerOn ? getColor(R.color.button_active) : getColor(R.color.button_inactive));
+                btnSpeaker.setBackgroundColor(
+                        !isSpeakerOn ? getColor(R.color.button_active) : getColor(R.color.button_inactive));
 
                 String message = !isSpeakerOn ? "تم تفعيل السماعة الخارجية" : "تم إيقاف السماعة الخارجية";
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
@@ -301,10 +303,29 @@ public class CallManagementActivity extends AppCompatActivity implements CallSer
         runOnUiThread(() -> {
             Log.d(TAG, "Received text message: " + message);
             // For now, we'll just show a toast with the received message
-            // In a more complete implementation, we would display the message in a chat view
+            // In a more complete implementation, we would display the message in a chat
+            // view
             String toastMessage = getString(R.string.message_received, fromIP, message);
             Toast.makeText(this, toastMessage, Toast.LENGTH_LONG).show();
         });
+    }
+
+    // New callback methods
+    @Override
+    public void onConnectionEstablished(String fromIP) {
+        // Not used in this activity
+    }
+
+    @Override
+    public void onMessageSendFailed(String error) {
+        runOnUiThread(() -> {
+            Toast.makeText(this, "فشل في إرسال الرسالة: " + error, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    @Override
+    public void onConnectionStatusChanged(String status) {
+        // Not used in this activity
     }
 
     @Override

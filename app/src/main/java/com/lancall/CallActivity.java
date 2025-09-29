@@ -207,12 +207,12 @@ public class CallActivity extends AppCompatActivity implements CallService.CallS
         if (callService != null) {
             Log.d(TAG, "Answering call");
             callService.answerCall();
-            
+
             // فتح شاشة إدارة المكالمة بعد الرد
             Intent callManagementIntent = new Intent(this, CallManagementActivity.class);
             callManagementIntent.putExtra("remote_ip", targetIP != null ? targetIP : callService.getRemoteIP());
             startActivity(callManagementIntent);
-            
+
             // إغلاق شاشة المكالمة الحالية
             finish();
         }
@@ -314,12 +314,13 @@ public class CallActivity extends AppCompatActivity implements CallService.CallS
     public void onCallConnected() {
         runOnUiThread(() -> {
             Log.d(TAG, "Call connected");
-            
+
             // فتح شاشة إدارة المكالمة عند الاتصال
             Intent callManagementIntent = new Intent(this, CallManagementActivity.class);
-            callManagementIntent.putExtra("remote_ip", targetIP != null ? targetIP : (callService != null ? callService.getRemoteIP() : null));
+            callManagementIntent.putExtra("remote_ip",
+                    targetIP != null ? targetIP : (callService != null ? callService.getRemoteIP() : null));
             startActivity(callManagementIntent);
-            
+
             // إغلاق شاشة المكالمة الحالية
             finish();
         });
@@ -356,10 +357,29 @@ public class CallActivity extends AppCompatActivity implements CallService.CallS
         runOnUiThread(() -> {
             Log.d(TAG, "Received text message: " + message);
             // For now, we'll just show a toast with the received message
-            // In a more complete implementation, we would display the message in a chat view
+            // In a more complete implementation, we would display the message in a chat
+            // view
             String toastMessage = getString(R.string.message_received, fromIP, message);
             Toast.makeText(this, toastMessage, Toast.LENGTH_LONG).show();
         });
+    }
+
+    // New callback methods
+    @Override
+    public void onConnectionEstablished(String fromIP) {
+        // Not used in this activity
+    }
+
+    @Override
+    public void onMessageSendFailed(String error) {
+        runOnUiThread(() -> {
+            Toast.makeText(this, "فشل في إرسال الرسالة: " + error, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    @Override
+    public void onConnectionStatusChanged(String status) {
+        // Not used in this activity
     }
 
     @Override

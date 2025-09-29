@@ -11,7 +11,6 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.text.format.Formatter;
 import android.util.Log;
@@ -54,8 +53,8 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
     private static final int REQ_PERMS = 1001;
 
     // UI Components
-    private MaterialButton btnCall, btnQrScanner, btnSearch, btnSettings;
-    private MaterialButton btnClearChat, btnShareQr, btnBottomSettings;
+    private MaterialButton btnCall, btnQrScanner, btnSearch, btnShowQr;
+    private MaterialButton btnClearChat, btnShareQr;
     private MaterialButton sendButton;
     private TextInputEditText messageInput;
     private RecyclerView messagesRecyclerView;
@@ -103,7 +102,7 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main_unified);
+        setContentView(R.layout.activity_main_unified_improved);
 
         initializeViews();
         setupClickListeners();
@@ -137,12 +136,11 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
         btnCall = findViewById(R.id.btnCall);
         btnQrScanner = findViewById(R.id.btnQrScanner);
         btnSearch = findViewById(R.id.btnSearch);
-        btnSettings = findViewById(R.id.btnSettings);
+        btnShowQr = findViewById(R.id.btnShowQr);
 
-        // Bottom toolbar buttons
+        // Floating action buttons
         btnClearChat = findViewById(R.id.btnClearChat);
         btnShareQr = findViewById(R.id.btnShareQr);
-        btnBottomSettings = findViewById(R.id.btnBottomSettings);
 
         // Message input
         messageInput = findViewById(R.id.messageInput);
@@ -163,12 +161,11 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
         btnCall.setOnClickListener(v -> startCall());
         btnQrScanner.setOnClickListener(v -> scanQrCode());
         btnSearch.setOnClickListener(v -> searchDevices());
-        btnSettings.setOnClickListener(v -> showSettings());
+        btnShowQr.setOnClickListener(v -> showQrCode());
 
-        // Bottom toolbar
+        // Floating action buttons
         btnClearChat.setOnClickListener(v -> clearChat());
         btnShareQr.setOnClickListener(v -> shareQrCode());
-        btnBottomSettings.setOnClickListener(v -> showSettings());
 
         // Message input
         sendButton.setOnClickListener(v -> sendMessage());
@@ -258,6 +255,32 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
         }
     }
 
+    private void showQrCode() {
+        if (localIpAddress == null || localIpAddress.isEmpty()) {
+            Toast.makeText(this, "تعذر الحصول على عنوان IP", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Generate QR code
+        String payload = "lancall://" + localIpAddress + ":" + CallService.SIGNALING_PORT;
+        Bitmap qrBitmap = generateQrCode(payload, 400, 400);
+
+        if (qrBitmap != null) {
+            // Show QR code in dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("رمز QR للجهاز");
+
+            ImageView qrImageView = new ImageView(this);
+            qrImageView.setImageBitmap(qrBitmap);
+            builder.setView(qrImageView);
+
+            builder.setPositiveButton("إغلاق", (dialog, which) -> dialog.dismiss());
+            builder.show();
+        } else {
+            Toast.makeText(this, "فشل في إنشاء رمز QR", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void sendMessage() {
         String messageText = messageInput.getText().toString().trim();
         if (messageText.isEmpty()) {
@@ -275,13 +298,35 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
             return;
         }
 
-        // Send message through CallService
-        callService.sendTextMessage(messageText);
-
-        // Add message to local UI
+        // Create message with SENDING status
         Message message = new Message(localIpAddress, messageText, System.currentTimeMillis());
+        message.setStatus(Message.MessageStatus.SENDING);
+
+        // Add message to local UI immediately
         messageAdapter.addMessage(message);
         messagesRecyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
+
+        // Send message through CallService in a background thread
+        new Thread(() -> {
+            try {
+                callService.sendTextMessage(messageText);
+
+                // Update message status to SENT on success
+                runOnUiThread(() -> {
+                    message.setStatus(Message.MessageStatus.SENT);
+                    // Find the message in adapter and update its status
+                    // In a real implementation, you would have a better way to track messages
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to send message", e);
+                // Update message status to FAILED on error
+                runOnUiThread(() -> {
+                    message.setStatus(Message.MessageStatus.FAILED);
+                    // Find the message in adapter and update its status
+                    // In a real implementation, you would have a better way to track messages
+                });
+            }
+        }).start();
 
         // Clear input
         messageInput.setText("");
@@ -387,21 +432,48 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
             if (qrContent != null && !qrContent.isEmpty()) {
                 Log.d(TAG, "Scanned QR content: " + qrContent);
 
+                // Validate QR code format
                 if (qrContent.startsWith("lancall://")) {
                     String[] parts = qrContent.replace("lancall://", "").split(":");
                     if (parts.length == 2) {
-                        remoteIpAddress = parts[0];
+                        // Validate IP address format
+                        if (isValidIpAddress(parts[0])) {
+                            remoteIpAddress = parts[0];
 
-                        Toast.makeText(this, "تم الاتصال بالجهاز: " + remoteIpAddress, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "تم الاتصال بالجهاز: " + remoteIpAddress, Toast.LENGTH_SHORT).show();
 
-                        // Update connection status
-                        isConnected = true;
-                        updateConnectionStatus();
-
-                        // In a real implementation, you would connect to the remote device here
+                            // Update connection status
+                            isConnected = true;
+                            updateConnectionStatus();
+                        } else {
+                            Toast.makeText(this, "عنوان IP غير صالح", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(this, "رمز QR غير صحيح", Toast.LENGTH_SHORT).show();
                     }
+                } else {
+                    Toast.makeText(this, "رمز QR غير مدعوم", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                Toast.makeText(this, "لم يتم قراءة رمز QR بشكل صحيح", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    private boolean isValidIpAddress(String ip) {
+        // Simple IP validation
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4)
+            return false;
+        try {
+            for (String part : parts) {
+                int num = Integer.parseInt(part);
+                if (num < 0 || num > 255)
+                    return false;
+            }
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 
@@ -470,8 +542,32 @@ public class MainActivityUnified extends AppCompatActivity implements CallServic
             Log.d(TAG, "Received text message from " + fromIP + ": " + message);
 
             Message msg = new Message(fromIP, message, System.currentTimeMillis());
+            msg.setStatus(Message.MessageStatus.DELIVERED);
             messageAdapter.addMessage(msg);
             messagesRecyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
+        });
+    }
+
+    // New callback methods
+    @Override
+    public void onConnectionEstablished(String fromIP) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "Connection established with: " + fromIP);
+            Toast.makeText(this, "تم الاتصال مع: " + fromIP, Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    @Override
+    public void onMessageSendFailed(String error) {
+        runOnUiThread(() -> {
+            Toast.makeText(this, "فشل في إرسال الرسالة: " + error, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    @Override
+    public void onConnectionStatusChanged(String status) {
+        runOnUiThread(() -> {
+            Log.d(TAG, "Connection status changed: " + status);
         });
     }
 }

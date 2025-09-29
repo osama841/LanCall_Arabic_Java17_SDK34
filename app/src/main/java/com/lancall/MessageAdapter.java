@@ -49,6 +49,29 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         if (message.getSenderIp().equals(localIpAddress)) {
             holder.senderIpText.setText("أنت");
         }
+
+        // Show message status
+        switch (message.getStatus()) {
+            case SENDING:
+                holder.statusText.setText("جاري الإرسال...");
+                holder.statusText.setVisibility(View.VISIBLE);
+                break;
+            case SENT:
+                holder.statusText.setText("تم الإرسال");
+                holder.statusText.setVisibility(View.VISIBLE);
+                break;
+            case DELIVERED:
+                holder.statusText.setText("تم التوصيل");
+                holder.statusText.setVisibility(View.VISIBLE);
+                break;
+            case FAILED:
+                holder.statusText.setText("فشل الإرسال");
+                holder.statusText.setVisibility(View.VISIBLE);
+                break;
+            default:
+                holder.statusText.setVisibility(View.GONE);
+                break;
+        }
     }
 
     @Override
@@ -61,21 +84,34 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         notifyItemInserted(messages.size() - 1);
     }
 
+    public void updateMessageStatus(String messageId, Message.MessageStatus status) {
+        for (int i = 0; i < messages.size(); i++) {
+            if (messages.get(i).getId().equals(messageId)) {
+                messages.get(i).setStatus(status);
+                notifyItemChanged(i);
+                break;
+            }
+        }
+    }
+
     public void clearMessages() {
+        int size = messages.size();
         messages.clear();
-        notifyDataSetChanged();
+        notifyItemRangeRemoved(0, size);
     }
 
     static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView senderIpText;
         TextView messageText;
         TextView timestampText;
+        TextView statusText;
 
         public MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             senderIpText = itemView.findViewById(R.id.senderIpText);
             messageText = itemView.findViewById(R.id.messageText);
             timestampText = itemView.findViewById(R.id.timestampText);
+            statusText = itemView.findViewById(R.id.statusText);
         }
     }
 }

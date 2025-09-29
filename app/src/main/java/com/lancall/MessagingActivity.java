@@ -34,6 +34,7 @@ public class MessagingActivity extends AppCompatActivity {
     private boolean serviceBound = false;
 
     private String localIpAddress;
+    private String remoteIpAddress; // Add this field
 
     // Service connection to bind to CallService
     private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -42,6 +43,11 @@ public class MessagingActivity extends AppCompatActivity {
             CallService.CallServiceBinder binder = (CallService.CallServiceBinder) service;
             callService = binder.getService();
             serviceBound = true;
+
+            // Set remote IP for messaging
+            if (remoteIpAddress != null && !remoteIpAddress.isEmpty()) {
+                callService.setRemoteIPForMessaging(remoteIpAddress);
+            }
 
             // Set callback for receiving messages
             callService.setCallback(new CallService.CallServiceCallback() {
@@ -74,6 +80,25 @@ public class MessagingActivity extends AppCompatActivity {
                         messagesRecyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
                     });
                 }
+
+                // New callback methods
+                @Override
+                public void onConnectionEstablished(String fromIP) {
+                    // Not used in messaging activity
+                }
+
+                @Override
+                public void onMessageSendFailed(String error) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MessagingActivity.this, "فشل في إرسال الرسالة: " + error, Toast.LENGTH_LONG)
+                                .show();
+                    });
+                }
+
+                @Override
+                public void onConnectionStatusChanged(String status) {
+                    // Not used in messaging activity
+                }
             });
         }
 
@@ -89,6 +114,9 @@ public class MessagingActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_messaging);
 
+        // Get remote IP from intent
+        remoteIpAddress = getIntent().getStringExtra("target_ip");
+        
         initViews();
         setupRecyclerView();
         bindToService();

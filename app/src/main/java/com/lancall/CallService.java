@@ -34,6 +34,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -92,6 +94,10 @@ public class CallService extends Service {
     private AudioRecord audioRecord; // مسجل الصوت: يلتقط الصوت من الميكروفون ويحوله لبيانات رقمية
     private AudioTrack audioTrack; // مشغل الصوت: يحول البيانات الرقمية المستقبلة إلى صوت في السماعة
 
+    // Reusable audio buffers for better memory management
+    private byte[] audioSendBuffer;
+    private byte[] audioReceiveBuffer;
+
     // معلومات المكالمة الحالية - Current call information
     private String remoteIP; // عنوان IP للجهاز الآخر في المكالمة - يحدد وجهة إرسال البيانات الصوتية
     private CallState currentCallState = CallState.IDLE; // حالة المكالمة الحالية - تبدأ بـ IDLE (خاملة) وتتغير حسب
@@ -110,6 +116,12 @@ public class CallService extends Service {
 
         void onTextMessageReceived(String fromIP, String message); // عند استقبال رسالة نصية - يمرر عنوان IP للمرسل
                                                                    // والرسالة
+
+        void onConnectionEstablished(String fromIP); // عند تأكيد الاتصال - يمرر عنوان IP للجهاز المتصل
+
+        void onMessageSendFailed(String error); // عند فشل إرسال رسالة - يمرر رسالة الخطأ
+
+        void onConnectionStatusChanged(String status); // عند تغيير حالة الاتصال - يمرر حالة الاتصال الجديدة
     }
 
     private CallServiceCallback callback;
@@ -163,6 +175,9 @@ public class CallService extends Service {
                                                            // عدم الاستخدام
         createNotificationChannel(); // إنشاء قناة الإشعارات - ضروري لعرض إشعارات الخدمة في Android 8.0+
         Log.d(TAG, "CallService created"); // تسجيل إنشاء الخدمة في اللوغ للمتابعة
+
+        // Initialize reusable audio buffers
+        initializeAudioBuffers();
     }
 
     /**
@@ -358,6 +373,26 @@ public class CallService extends Service {
                             callback.onTextMessageReceived(fromIP, textData.message);
                         });
                     }
+                } else if (SignalingProtocol.MESSAGE_TYPE_CONNECTION_REQUEST.equals(message.type)) {
+                    // Handle connection request
+                    Log.d(TAG, "Received connection request from: " + fromIP);
+
+                    // Send acknowledgment
+                    SignalingProtocol.Message ack = SignalingProtocol.createConnectionAck(getLocalIPv4());
+                    String ackJson = SignalingProtocol.messageToJson(ack);
+
+                    if (ackJson != null) {
+                        clientSocket.getOutputStream().write(ackJson.getBytes("UTF-8"));
+                        clientSocket.getOutputStream().flush();
+                        Log.d(TAG, "Sent connection acknowledgment to: " + fromIP);
+
+                        // Notify the callback about the established connection
+                        if (callback != null) {
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                callback.onConnectionEstablished(fromIP);
+                            });
+                        }
+                    }
                 } else {
                     Log.d(TAG, "Received unknown message type: " + message.type);
                 }
@@ -402,7 +437,9 @@ public class CallService extends Service {
 
                 if (jsonMessage != null) {
                     // محاولة الاتصال بخادم الإشارات في الجهاز المستهدف
-                    Socket signalingSocket = new Socket(targetIP, targetPort);
+                    Socket signalingSocket = new Socket();
+                    signalingSocket.connect(new java.net.InetSocketAddress(targetIP, targetPort), 10000); // 10 seconds
+                                                                                                          // timeout
 
                     Log.d(TAG, "Connected to target signaling server");
 
@@ -435,6 +472,13 @@ public class CallService extends Service {
                     }
                 }
 
+            } catch (SocketTimeoutException e) {
+                Log.e(TAG, "Connection timeout: " + e.getMessage(), e);
+                currentCallState = CallState.ENDED;
+                if (callback != null) {
+                    new Handler(Looper.getMainLooper())
+                            .post(() -> callback.onCallError("انتهت مهلة الاتصال"));
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Error making call: " + e.getMessage(), e);
                 currentCallState = CallState.ENDED;
@@ -496,25 +540,52 @@ public class CallService extends Service {
      * Send text message to the other device
      */
     public void sendTextMessage(String message) {
-        if (!isInCall || remoteIP == null) {
-            Log.w(TAG, "Not in call or remote IP not set");
+        // Allow sending messages even when not in a call, as long as remote IP is set
+        if (remoteIP == null || remoteIP.isEmpty()) {
+            Log.w(TAG, "Remote IP not set");
             return;
         }
 
         Log.d(TAG, "Attempting to send text message: " + message + " to " + remoteIP);
 
         executorService.execute(() -> {
+            // Try to send message with retry mechanism
+            boolean sent = sendMessageWithRetry(message, 3);
+
+            if (!sent) {
+                Log.e(TAG, "Failed to send text message after retries");
+                if (callback != null) {
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        callback.onMessageSendFailed("فشل في إرسال الرسالة بعد عدة محاولات");
+                    });
+                }
+            } else {
+                Log.d(TAG, "Text message sent successfully: " + message);
+            }
+        });
+    }
+
+    /**
+     * إرسال رسالة مع إعادة المحاولة
+     * Send message with retry mechanism
+     */
+    private boolean sendMessageWithRetry(String message, int maxRetries) {
+        for (int i = 0; i < maxRetries; i++) {
             Socket signalingSocket = null;
             try {
-                // Create text message
+                // Create text message with unique ID
                 String localIP = getLocalIPv4();
+                String messageId = UUID.randomUUID().toString();
                 SignalingProtocol.Message textMessage = SignalingProtocol.createTextMessage(localIP, message);
                 String jsonMessage = SignalingProtocol.messageToJson(textMessage);
 
                 if (jsonMessage != null) {
                     Log.d(TAG, "Serialized text message: " + jsonMessage);
                     // Send message via TCP socket
-                    signalingSocket = new Socket(remoteIP, SIGNALING_PORT);
+                    signalingSocket = new Socket();
+                    signalingSocket.connect(new java.net.InetSocketAddress(remoteIP, SIGNALING_PORT), 5000); // 5
+                                                                                                             // seconds
+                                                                                                             // timeout
                     Log.d(TAG, "Connected to signaling server at " + remoteIP + ":" + SIGNALING_PORT);
 
                     // Set timeout for the socket
@@ -524,18 +595,24 @@ public class CallService extends Service {
                     signalingSocket.getOutputStream().flush();
                     Log.d(TAG, "Sent text message to " + remoteIP);
 
-                    // Small delay to ensure message is received
-                    Thread.sleep(100);
-
                     // Ensure data is sent before closing
-                    signalingSocket.getOutputStream().close();
+                    signalingSocket.shutdownOutput();
 
-                    Log.d(TAG, "Text message sent successfully: " + message);
+                    signalingSocket.close();
+                    return true; // Message sent successfully
                 } else {
                     Log.e(TAG, "Failed to serialize text message");
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error sending text message: " + e.getMessage(), e);
+                Log.e(TAG, "Error sending text message (attempt " + (i + 1) + "): " + e.getMessage(), e);
+                if (i < maxRetries - 1) {
+                    try {
+                        Thread.sleep(1000); // Wait 1 second before retry
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             } finally {
                 // Always close the socket
                 if (signalingSocket != null) {
@@ -547,7 +624,8 @@ public class CallService extends Service {
                     }
                 }
             }
-        });
+        }
+        return false; // Failed to send after all retries
     }
 
     public void toggleMute() {
@@ -567,8 +645,24 @@ public class CallService extends Service {
         return remoteIP;
     }
 
+    /**
+     * Set remote IP for messaging purposes without starting a call
+     * @param remoteIP The IP address of the remote device
+     */
+    public void setRemoteIPForMessaging(String remoteIP) {
+        this.remoteIP = remoteIP;
+        // We don't set isInCall to true here as this is just for messaging
+        // But we need to ensure the service can send messages
+        Log.d(TAG, "Remote IP set for messaging: " + remoteIP);
+    }
+
     public void setCallback(CallServiceCallback callback) {
         this.callback = callback;
+    }
+
+    private void initializeAudioBuffers() {
+        audioSendBuffer = new byte[BUFFER_SIZE];
+        audioReceiveBuffer = new byte[BUFFER_SIZE];
     }
 
     private void startAudioStreaming() {
@@ -628,18 +722,17 @@ public class CallService extends Service {
     }
 
     private void audioSendingLoop() {
-        byte[] buffer = new byte[BUFFER_SIZE];
         long sequenceNumber = 0;
         Log.d(TAG, "Audio sending loop started, sending to: " + remoteIP + ":" + AUDIO_PORT);
 
         while (isInCall && audioRecord != null) {
             try {
-                int bytesRead = audioRecord.read(buffer, 0, buffer.length);
+                int bytesRead = audioRecord.read(audioSendBuffer, 0, audioSendBuffer.length);
 
                 if (bytesRead > 0 && !isMuted) {
                     // Create audio packet and send to remote
                     DatagramPacket packet = new DatagramPacket(
-                            buffer, bytesRead,
+                            audioSendBuffer, bytesRead,
                             InetAddress.getByName(remoteIP),
                             AUDIO_PORT);
 
@@ -664,13 +757,12 @@ public class CallService extends Service {
     }
 
     private void audioReceivingLoop() {
-        byte[] buffer = new byte[BUFFER_SIZE];
         long receivedPackets = 0;
         Log.d(TAG, "Audio receiving loop started, listening on port: " + AUDIO_PORT);
 
         while (isInCall && audioTrack != null) {
             try {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                DatagramPacket packet = new DatagramPacket(audioReceiveBuffer, audioReceiveBuffer.length);
 
                 if (audioSocket != null) {
                     audioSocket.receive(packet);

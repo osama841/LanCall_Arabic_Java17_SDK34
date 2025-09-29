@@ -14,6 +14,7 @@ import android.os.IBinder; // رابط الخدمة - للتفاعل مع خدم
 import android.os.Looper; // حلقة الرسائل - لالخيط الرئيسي
 import android.text.format.Formatter;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;
@@ -30,6 +32,8 @@ import com.journeyapps.barcodescanner.CaptureActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 /**
@@ -50,6 +54,20 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
     // يُستخدم للتفاعل مع خدمة المكالمات واستقبال إشعارات المكالمات الواردة
     private CallService callService; // مرجع لخدمة المكالمات
     private boolean isServiceBound = false; // هل تم ربط الخدمة بنجاح؟
+    
+    // Executor service for background tasks
+    private ExecutorService executorService = Executors.newCachedThreadPool();
+    
+    // UI Components
+    private MaterialButton btnScanQr, btnShare, btnCall, btnMessage;
+    private TextView tvAddr, connectionStatusText, remoteDeviceText;
+    private ImageView connectionStatusIndicator;
+    private View connectionStatusCard, scanActionButtonsLayout, connectedActionButtonsLayout;
+    
+    // Connection information
+    private String remoteIpAddress;
+    private boolean isConnected = false;
+
     /**
      * رابط الخدمة - Service connection handler
      * يدير الاتصال وانقطاع الاتصال مع خدمة المكالمات
@@ -92,7 +110,6 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
                         handleScanResult(result.getData());
                     } else {
                         Toast.makeText(this, "تم الإلغاء", Toast.LENGTH_SHORT).show();
-                        finish();
                     }
                 });
 
@@ -105,7 +122,10 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
             startService(serviceIntent);
             bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-            setContentView(R.layout.activity_qr);
+            setContentView(R.layout.activity_qr_beautiful);
+            initializeViews();
+            setupClickListeners();
+            
             TextView tvAddr = findViewById(R.id.tvAddr);
             ImageView img = findViewById(R.id.imgQr);
             String ipv4 = getLocalIPv4();
@@ -116,11 +136,77 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
             }
             String payload = "lancall://" + ipv4 + ":10001";
             tvAddr.setText(payload);
-            img.setImageBitmap(renderQr(payload, 800, 800));
+            Bitmap qrBitmap = renderQr(payload, 800, 800);
+            if (qrBitmap != null) {
+                img.setImageBitmap(qrBitmap);
+            } else {
+                Toast.makeText(this, "فشل في إنشاء رمز QR", Toast.LENGTH_LONG).show();
+                Log.e("QrActivity", "Failed to generate QR code for payload: " + payload);
+            }
 
             // إظهار رسالة أن الجهاز جاهز لاستقبال المكالمات
             Toast.makeText(this, "جاهز لاستقبال المكالمات \ud83d\udcde", Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void initializeViews() {
+        // Main views
+        tvAddr = findViewById(R.id.tvAddr);
+        connectionStatusText = findViewById(R.id.connectionStatusText);
+        remoteDeviceText = findViewById(R.id.remoteDeviceText);
+        connectionStatusIndicator = findViewById(R.id.connectionStatusIndicator);
+        connectionStatusCard = findViewById(R.id.connectionStatusCard);
+        scanActionButtonsLayout = findViewById(R.id.scanActionButtonsLayout);
+        connectedActionButtonsLayout = findViewById(R.id.connectedActionButtonsLayout);
+        
+        // Action buttons
+        btnScanQr = findViewById(R.id.btnScanQr);
+        btnShare = findViewById(R.id.btnShare);
+        btnCall = findViewById(R.id.btnCall);
+        btnMessage = findViewById(R.id.btnMessage);
+    }
+
+    private void setupClickListeners() {
+        // Scan mode buttons
+        btnScanQr.setOnClickListener(v -> scan());
+        btnShare.setOnClickListener(v -> shareQrCode());
+        
+        // Connected mode buttons
+        btnCall.setOnClickListener(v -> startCall());
+        btnMessage.setOnClickListener(v -> startMessaging());
+    }
+
+    private void shareQrCode() {
+        // For now, just show a toast
+        Toast.makeText(this, "وظيفة مشاركة رمز QR قيد التطوير", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void startCall() {
+        if (!isConnected || remoteIpAddress == null) {
+            Toast.makeText(this, "لا يوجد اتصال بجهاز آخر", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Toast.makeText(this, "بدء مكالمة مع: " + remoteIpAddress, Toast.LENGTH_SHORT).show();
+        // Start call activity
+        Intent callIntent = new Intent(this, CallActivity.class);
+        callIntent.putExtra("mode", "outgoing");
+        callIntent.putExtra("target_ip", remoteIpAddress);
+        callIntent.putExtra("target_port", CallService.SIGNALING_PORT);
+        startActivity(callIntent);
+    }
+    
+    private void startMessaging() {
+        if (!isConnected || remoteIpAddress == null) {
+            Toast.makeText(this, "لا يوجد اتصال بجهاز آخر", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Toast.makeText(this, "فتح المراسلة مع: " + remoteIpAddress, Toast.LENGTH_SHORT).show();
+        // Start messaging activity
+        Intent messageIntent = new Intent(this, MessagingActivity.class);
+        messageIntent.putExtra("target_ip", remoteIpAddress);
+        startActivity(messageIntent);
     }
 
     @Override
@@ -130,6 +216,9 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
             callService.setCallback(null);
             unbindService(serviceConnection);
             isServiceBound = false;
+        }
+        if (executorService != null) {
+            executorService.shutdown();
         }
     }
 
@@ -146,7 +235,6 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
             callIntent.putExtra("target_ip", fromIP);
             callIntent.putExtra("target_port", 10001);
             startActivity(callIntent);
-            finish(); // إغلاق QR activity
         });
     }
 
@@ -176,6 +264,50 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
             String toastMessage = getString(R.string.message_received, fromIP, message);
             Toast.makeText(this, toastMessage, Toast.LENGTH_LONG).show();
         });
+    }
+    
+    // New callback methods for connection handling
+    @Override
+    public void onConnectionEstablished(String fromIP) {
+        runOnUiThread(() -> {
+            Log.d("QrActivity", "Connection established with: " + fromIP);
+            remoteIpAddress = fromIP;
+            isConnected = true;
+            
+            // Update UI to show connection
+            updateConnectionStatus();
+            
+            Toast.makeText(this, "تم الاتصال مع: " + fromIP, Toast.LENGTH_LONG).show();
+        });
+    }
+    
+    @Override
+    public void onMessageSendFailed(String error) {
+        runOnUiThread(() -> {
+            Toast.makeText(this, "فشل في إرسال الرسالة: " + error, Toast.LENGTH_LONG).show();
+        });
+    }
+    
+    @Override
+    public void onConnectionStatusChanged(String status) {
+        runOnUiThread(() -> {
+            Log.d("QrActivity", "Connection status changed: " + status);
+        });
+    }
+    
+    private void updateConnectionStatus() {
+        if (isConnected && remoteIpAddress != null) {
+            connectionStatusText.setText("متصل");
+            remoteDeviceText.setText("الجهاز الآخر: " + remoteIpAddress);
+            connectionStatusIndicator.setBackgroundColor(0xFF00FF00); // Green
+            connectionStatusCard.setVisibility(View.VISIBLE);
+            scanActionButtonsLayout.setVisibility(View.GONE);
+            connectedActionButtonsLayout.setVisibility(View.VISIBLE);
+        } else {
+            connectionStatusCard.setVisibility(View.GONE);
+            scanActionButtonsLayout.setVisibility(View.VISIBLE);
+            connectedActionButtonsLayout.setVisibility(View.GONE);
+        }
     }
 
     private void scan() {
@@ -222,29 +354,94 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
                 String targetIp = parts[0];
                 int targetPort = Integer.parseInt(parts[1]);
 
-                Log.d("QrActivity", "Starting call to: " + targetIp + ":" + targetPort);
+                Log.d("QrActivity", "Starting connection to: " + targetIp + ":" + targetPort);
 
-                // إظهار رسالة التوصيل أولاً
-                Toast.makeText(this, "تم التوصيل بينITIZE", Toast.LENGTH_LONG).show();
-
-                // انتظار قصير لإظهار الرسالة ثم بدء المكالمة
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    // Start call activity
-                    Intent callIntent = new Intent(this, CallActivity.class);
-                    callIntent.putExtra("mode", "outgoing");
-                    callIntent.putExtra("target_ip", targetIp);
-                    callIntent.putExtra("target_port", targetPort);
-                    startActivity(callIntent);
-                    finish(); // أغلق QR activity
-                }, 2000); // انتظار ثانيتين
+                // إرسال إشارة اتصال أولاً
+                sendConnectionRequest(targetIp, targetPort);
             } else {
                 Toast.makeText(this, getString(R.string.error_invalid_qr), Toast.LENGTH_SHORT).show();
-                finish();
             }
         } else {
             Toast.makeText(this, "لم يتم قراءة QR بشكل صحيح - جرب مرة أخرى", Toast.LENGTH_SHORT).show();
-            finish();
         }
+    }
+
+    // إرسال طلب اتصال أولاً
+    private void sendConnectionRequest(String targetIp, int targetPort) {
+        executorService.execute(() -> {
+            try {
+                // Show connecting dialog
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "جاري الاتصال...", Toast.LENGTH_SHORT).show();
+                });
+                
+                // Create connection request message
+                String localIP = getLocalIPv4();
+                SignalingProtocol.Message request = SignalingProtocol.createConnectionRequest(localIP);
+                String jsonMessage = SignalingProtocol.messageToJson(request);
+                
+                if (jsonMessage != null) {
+                    // Send connection request via TCP socket
+                    java.net.Socket signalingSocket = new java.net.Socket(targetIp, targetPort);
+                    Log.d("QrActivity", "Connected to target signaling server");
+                    
+                    // Set timeout for the socket
+                    signalingSocket.setSoTimeout(10000); // 10 seconds timeout
+                    
+                    signalingSocket.getOutputStream().write(jsonMessage.getBytes("UTF-8"));
+                    signalingSocket.getOutputStream().flush();
+                    Log.d("QrActivity", "Sent connection request to " + targetIp);
+                    
+                    // Wait for acknowledgment
+                    java.io.InputStream inputStream = signalingSocket.getInputStream();
+                    java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                    byte[] data = new byte[1024];
+                    int nRead;
+                    
+                    // Read all available data
+                    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                        buffer.write(data, 0, nRead);
+                        // Check if we have a complete JSON message
+                        String currentData = buffer.toString("UTF-8");
+                        if (currentData.trim().endsWith("}")) {
+                            break; // We have a complete JSON message
+                        }
+                    }
+                    
+                    buffer.flush();
+                    String jsonResponse = buffer.toString("UTF-8");
+                    Log.d("QrActivity", "Received response: " + jsonResponse);
+                    
+                    // Parse the response
+                    SignalingProtocol.Message response = SignalingProtocol.jsonToMessage(jsonResponse);
+                    
+                    if (response != null && SignalingProtocol.MESSAGE_TYPE_CONNECTION_ACK.equals(response.type)) {
+                        // Connection acknowledged, update UI but don't navigate away
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "تم التوصيل بين الأجهزة", Toast.LENGTH_LONG).show();
+                            remoteIpAddress = targetIp;
+                            isConnected = true;
+                            updateConnectionStatus();
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "فشل في الاتصال: لم يتم تأكيد الاتصال", Toast.LENGTH_LONG).show();
+                        });
+                    }
+                    
+                    signalingSocket.close();
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "فشل في إعداد الاتصال", Toast.LENGTH_LONG).show();
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("QrActivity", "Error sending connection request: " + e.getMessage(), e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "فشل في الاتصال: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     private boolean isValidLanCallUrl(String url) {
@@ -289,9 +486,9 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
                     pixels[offset + x] = matrix.get(x, y) ? 0xFF000000 : 0xFFFFFFFF;
                 }
             }
-            Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-            bmp.setPixels(pixels, 0, w, 0, 0, w, h);
-            return bmp;
+            Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            bitmap.setPixels(pixels, 0, w, 0, 0, w, h);
+            return bitmap;
         } catch (Exception e) {
             return null;
         }
@@ -299,49 +496,15 @@ public class QrActivity extends AppCompatActivity implements CallService.CallSer
 
     private String getLocalIPv4() {
         try {
-            // الطريقة الأولى: استخدام WifiManager
-            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            if (wifiManager != null && wifiManager.isWifiEnabled()) {
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (wifiManager != null) {
                 WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-                if (wifiInfo != null) {
-                    int ip = wifiInfo.getIpAddress();
-                    if (ip != 0) {
-                        String ipAddress = Formatter.formatIpAddress(ip);
-                        // تحقق من أن IP ليس localhost
-                        if (!ipAddress.equals("0.0.0.0") && !ipAddress.startsWith("127.")) {
-                            return ipAddress;
-                        }
-                    }
-                }
+                int ipAddress = wifiInfo.getIpAddress();
+                return Formatter.formatIpAddress(ipAddress);
             }
-
-            // الطريقة الثانية: استخدام NetworkInterface (للحالات الأخرى)
-            java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface
-                    .getNetworkInterfaces();
-            while (interfaces.hasMoreElements()) {
-                java.net.NetworkInterface networkInterface = interfaces.nextElement();
-                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
-                    continue;
-                }
-
-                java.util.Enumeration<java.net.InetAddress> addresses = networkInterface.getInetAddresses();
-                while (addresses.hasMoreElements()) {
-                    java.net.InetAddress address = addresses.nextElement();
-                    if (!address.isLoopbackAddress() && address instanceof java.net.Inet4Address) {
-                        String ip = address.getHostAddress();
-                        // تحقق من أن IP في شبكة محلية
-                        if (ip != null
-                                && (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172."))) {
-                            return ip;
-                        }
-                    }
-                }
-            }
-
-            return null;
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            Log.e("QrActivity", "Error getting local IP: " + e.getMessage(), e);
         }
+        return null;
     }
 }
